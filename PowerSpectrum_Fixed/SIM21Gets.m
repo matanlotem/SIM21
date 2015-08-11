@@ -3,7 +3,7 @@ classdef SIM21Gets
         function Hz = getHz(z)
             % Hubble constant
             % in km/s/Mpc
-            load Planck_parameters
+            load(SIM21Utils.matrixPath('Planck_parameters'));
             Hz = H0*sqrt(Om*(1+z).^3+OLambda+8.5522e-05*(1+z).^4); 
         end
         
@@ -22,7 +22,7 @@ classdef SIM21Gets
             global pathname_Data1
             global ID
             
-            load Planck_parameters
+            load(SIM21Utils.matrixPath('Planck_parameters'));
             
             N=length(delta_cube);
             
@@ -56,7 +56,7 @@ classdef SIM21Gets
         
         function nH = getnH(z)
             % hydrogen proper number density
-            load Planck_parameters
+            load(SIM21Utils.matrixPath('Planck_parameters'));
             Y = 0.247; % Helium abundance by mass
             nH=(rhoc/mp)*(1-Y)*Ob*(1+z).^3; % 1/Mpc^3
         end
@@ -68,7 +68,7 @@ classdef SIM21Gets
         
         
         function tGP = getTauGPn(z) 
-            load Planck_parameters
+            load(SIM21Utils.matrixPath('Planck_parameters'));
             gamma = 50*10^6; % 1/s
             nH = SIM21Gets.getnH(z);% 1/Mpc^3
             tGP=(3*nH*(lambda_a)^3*gamma)./(2*SIM21Gets.getHz(z)*3.241e-20);
@@ -97,7 +97,7 @@ classdef SIM21Gets
             %  Reion=0.075;
             %  feedback=0;
             %  p=0;
-            load Planck_parameters
+            load(SIM21Utils.matrixPath('Planck_parameters'));
             
             S_alpha2=SIM21Gets.getSalpha(TK,z0);
             JA_alpha = SIM21Gets.getLyA(TK,z0,ncube,fstar,flag,flagM,XeffTerm,Ispec,Reion,feedback,p,pop,FSfunc,photoheatingVersion);
@@ -108,7 +108,7 @@ classdef SIM21Gets
         function Xc = getXc(TK,z0)
             % collisional coupling coefficient
             global delta_cube
-            load Planck_parameters
+            load(SIM21Utils.matrixPath('Planck_parameters'));
             
             nH = (ones(size(delta_cube))+max(-1,min(1,delta_cube))).*SIM21Gets.getnH(z0)/(3.1e24)^3;% 1/cm^3
             kappa = SIM21Gets.getKappa(TK);%cm^3/s

@@ -78,7 +78,8 @@ function ID = ParamStudy(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayP
         T21 = mean(mean(mean(Tlin)));
         Tlin = real((Tlin-T21)./T21);
         
-        [Pk,Pkm,Kout,Muout,nk,nkm] = SIM21Pk.getPkMu(Tlin,Lx,ep,Nmu);
+        %[Pk,Pkm,Kout,Muout,nk,nkm] = SIM21Pk.getPkMu(Tlin,Lx,ep,Nmu);
+        [Pkm,Kout,Muout,nkm] = SIM21Pk.getPkMu(Tlin,Lx,ep,Nmu);
         Pkm = Pkm*T21.^2;
         PowerMatMu(indz,:,:) = Pkm;
     end
@@ -88,8 +89,8 @@ function ID = ParamStudy(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayP
     save(strcat(pathname_Output,'N_TPowerMat_X',ID,'.mat'),'PowerMat_X');
     save(strcat(pathname_Output,'N_TPowerMat_del',ID,'.mat'),'PowerMat_del');
     save(strcat(pathname_Output,'N_TPowerMat_0',ID,'.mat'),'PowerMat_0');
-    save(strcat(pathname_Output,'N_TPowerMat_2',ID,'.mat'),'PowerMat_2');
     save(strcat(pathname_Output,'N_TPowerMat_4',ID,'.mat'),'PowerMat_4');
+    save(strcat(pathname_Output,'N_TPowerMat_2',ID,'.mat'),'PowerMat_2');
     save(strcat(pathname_Output,'N_TPowerMat_mu',ID,'.mat'),'PowerMatMu');
     toc;
 end

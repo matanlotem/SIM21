@@ -2,7 +2,7 @@ function [Tb,T21] = getTbcube(zii,ncube,fstar,flag,flagM,XeffTerm,Ispec,Reion,fe
     global pathname_Data2
     global ID
     global delta_cube
-    load Planck_parameters
+    load(SIM21Utils.matrixPath('Planck_parameters'));
     
     del = real(max(-0.9,min(1,delta_cube*LWgetDz(zii)/LWgetDz(40))));
     
