@@ -9,77 +9,18 @@ classdef SIM21Analysis
         T21cmZ = 6:60;
         NeutMagic = 'Neut';
         NeutZ = [6:0.1:15,16:60];
-        %PwSpZ = [5:0.1:15,16:40];
         PwSpZ = [6:0.1:15,16:40];
     end
     
     methods(Static)
         function analyse()
-            dataPath = '/scratch100/matanlotem/Data/';
-            outputPath = '/scratch100/matanlotem/Analysis/';
+            dataPath = '/scratch300/matanlotem/Data/';
+            outputPath = '/scratch300/matanlotem/Analysis/';
             runID = '0_0.05_1_16.5_1_1_0.075_0_0_2_1_2';
             
-            %SIM21Analysis.plotZGraphs(dataPath,outputPath,runID);
-            %specialParams=SIM21Analysis.calcSpecialParams(dataPath,outputPath,runID);
+            SIM21Analysis.plotZGraphs(dataPath,outputPath,runID);
+            specialParams=SIM21Analysis.calcSpecialParams(dataPath,outputPath,runID);
             SIM21Analysis.plotPowerSpectrums(outputPath,runID);
-        end
-        
-        
-        function specialParams=calcSpecialParams(dataPath,outputPath,runID)
-            %Calculate interesting parameters for specific run
-            SIM21Analysis.message('calculating parameters');
-            interpStep=0.001;
-            
-            xHIData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID),interpStep);
-            TKData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID),interpStep);
-            T21cmData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,runID),interpStep);
-            
-            % MIN / MAX
-            minT21cmInd = find(T21cmData(2,:)==min(T21cmData(2,:)));
-            maxT21cmInd = find(T21cmData(2,:)==max(T21cmData(2,:)));
-            specialParams.maxT21cm = T21cmData(:,maxT21cmInd);
-            specialParams.minT21cm = T21cmData(:,minT21cmInd);
-            
-            % MIN / MAX Slope
-            slope = diff(T21cmData(2,:)) ./ diff(T21cmData(1,:));
-            minSlopeInd = find(slope==min(slope));
-            maxSlopeInd = find(slope==max(slope));
-            specialParams.minSlope = cat(1,T21cmData(:,minSlopeInd),slope(minSlopeInd));
-            specialParams.maxSlope = cat(1,T21cmData(:,maxSlopeInd),slope(maxSlopeInd));
-            
-            % X Crossing
-            xCrossInd = find(diff(sign(T21cmData(2,:))));
-            specialParams.xCross = T21cmData(1,xCrossInd);
-            
-            % xHI Percentage
-            xHI75Ind = find(diff(sign(xHIData(2,:)-0.75)));
-            specialParams.xHI75 = xHIData(1,xHI75Ind);
-            xHI50Ind = find(diff(sign(xHIData(2,:)-0.50)));
-            specialParams.xHI50 = xHIData(1,xHI50Ind);
-            xHI25Ind = find(diff(sign(xHIData(2,:)-0.25)));
-            specialParams.xHI25 = xHIData(1,xHI25Ind);
-            
-            % Heating Transition: Tcmb = Tk
-            TCMBData = SIM21Analysis.interpData(cat(1,SIM21Analysis.TKZ,2.725*(1+SIM21Analysis.TKZ)),interpStep);
-            THTInd = find(diff(sign(TKData(2,:)-TCMBData(2,:))));
-            specialParams.THT = TKData(:,THTInd);
-            
-            % Save matrix
-            fileName = [outputPath,'specialParams_',runID];
-            save([fileName,'.mat'],'specialParams');
-            
-            % Save readable output
-            niceOutput = ['Min T\n\tz = ',num2str(specialParams.minT21cm(1)),'\n\tT = ',num2str(specialParams.minT21cm(2)),'\n',...
-                          'Max T\n\tz = ',num2str(specialParams.maxT21cm(1)),'\n\tT = ',num2str(specialParams.maxT21cm(2)),'\n',... 
-                          'Min Slope\n\tz = ',num2str(specialParams.minSlope(1)),'\n\tT = ',num2str(specialParams.minSlope(2)),'\n\tSlope = ',num2str(specialParams.minSlope(3)),'\n',... 
-                          'Max Slope\n\tz = ',num2str(specialParams.maxSlope(1)),'\n\tT = ',num2str(specialParams.maxSlope(2)),'\n\tSlope = ',num2str(specialParams.maxSlope(3)),'\n',...
-                          '0 Crossing\n\tz = ',num2str(specialParams.xCross),'\n',...
-                          'xHI Percentage\n\t75%% z = ',num2str(specialParams.xHI75),'\n\t50%% z = ',num2str(specialParams.xHI50),'\n\t25%% z = ',num2str(specialParams.xHI25),'\n',...
-                          'Heating Transition\n\tz = ',num2str(specialParams.THT(1)),'\n\tT = ',num2str(specialParams.THT(2)),'\n'];
-            
-            fid = fopen([fileName,'.txt'],'w');
-            fwrite(fid,sprintf(niceOutput));
-            fclose(fid);
         end
         
         
@@ -88,6 +29,22 @@ classdef SIM21Analysis
             SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID,'TK(z)','1+z','TK [mK]'); %TK
             SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,runID,'T21cm(z)','1+z','T21cm [mK]'); %T21cm
             SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID,'xHI(z)','1+z','xHi'); %xHI
+        end
+        
+        
+        function plotPowerSpectrums(outputPath,runID)
+            SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.1,['Atomic, Old spectrum - K=',num2str(0.1)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
+            SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.5,['Atomic, Old spectrum - K=',num2str(0.5)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
+            SIM21Analysis.plotPowerSpectrumByZ(outputPath,runID,'Atomic, Old spectrum','k [Mpc^{-1}]','k^3P(k)/2\pi^2 [mK^2]');
+        end
+        
+        
+        function plotPowerSpectrumByZ(outputPath,runID,figTitle,figXLabel,figYLabel)
+            zs = [8,8.7,10.37,17,11.53,22,30];
+            lineColors = {'r','g','b','m','c','k','k'};
+            lineStyles = {'-','-','-','-','-','-','--'};
+            lineWidths = ones(1,7);
+            SIM21Analysis.plotPowerSpectrumByZs(outputPath,runID,zs,lineColors,lineStyles,lineWidths,figTitle,figXLabel,figYLabel);
         end
         
         
@@ -158,10 +115,61 @@ classdef SIM21Analysis
         end
         
         
-        function plotPowerSpectrums(outputPath,runID)
-            %SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.1,['Atomic, Old spectrum - K=',num2str(0.1)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
-            %SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.5,['Atomic, Old spectrum - K=',num2str(0.5)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
-            SIM21Analysis.plotPowerSpectrumByZ(outputPath,runID,'Atomic, Old spectrum','k [Mpc^{-1}]','k^3P(k)/2\pi^2 [mK^2]');
+        function specialParams=calcSpecialParams(dataPath,outputPath,runID)
+            %Calculate interesting parameters for specific run
+            SIM21Analysis.message('calculating parameters');
+            interpStep=0.001;
+            
+            xHIData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID),interpStep);
+            TKData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID),interpStep);
+            T21cmData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,runID),interpStep);
+            
+            % MIN / MAX
+            minT21cmInd = find(T21cmData(2,:)==min(T21cmData(2,:)));
+            maxT21cmInd = find(T21cmData(2,:)==max(T21cmData(2,:)));
+            specialParams.maxT21cm = T21cmData(:,maxT21cmInd);
+            specialParams.minT21cm = T21cmData(:,minT21cmInd);
+            
+            % MIN / MAX Slope
+            slope = diff(T21cmData(2,:)) ./ diff(T21cmData(1,:));
+            minSlopeInd = find(slope==min(slope));
+            maxSlopeInd = find(slope==max(slope));
+            specialParams.minSlope = cat(1,T21cmData(:,minSlopeInd),slope(minSlopeInd));
+            specialParams.maxSlope = cat(1,T21cmData(:,maxSlopeInd),slope(maxSlopeInd));
+            
+            % X Crossing
+            xCrossInd = find(diff(sign(T21cmData(2,:))));
+            specialParams.xCross = T21cmData(1,xCrossInd);
+            
+            % xHI Percentage
+            xHI75Ind = find(diff(sign(xHIData(2,:)-0.75)));
+            specialParams.xHI75 = xHIData(1,xHI75Ind);
+            xHI50Ind = find(diff(sign(xHIData(2,:)-0.50)));
+            specialParams.xHI50 = xHIData(1,xHI50Ind);
+            xHI25Ind = find(diff(sign(xHIData(2,:)-0.25)));
+            specialParams.xHI25 = xHIData(1,xHI25Ind);
+            
+            % Heating Transition: Tcmb = Tk
+            TCMBData = SIM21Analysis.interpData(cat(1,SIM21Analysis.TKZ,2.725*(1+SIM21Analysis.TKZ)),interpStep);
+            THTInd = find(diff(sign(TKData(2,:)-TCMBData(2,:))));
+            specialParams.THT = TKData(:,THTInd);
+            
+            % Save matrix
+            fileName = [outputPath,'specialParams_',runID];
+            save([fileName,'.mat'],'specialParams');
+            
+            % Save readable output
+            niceOutput = ['Min T\n\tz = ',num2str(specialParams.minT21cm(1)),'\n\tT = ',num2str(specialParams.minT21cm(2)),'\n',...
+                          'Max T\n\tz = ',num2str(specialParams.maxT21cm(1)),'\n\tT = ',num2str(specialParams.maxT21cm(2)),'\n',... 
+                          'Min Slope\n\tz = ',num2str(specialParams.minSlope(1)),'\n\tT = ',num2str(specialParams.minSlope(2)),'\n\tSlope = ',num2str(specialParams.minSlope(3)),'\n',... 
+                          'Max Slope\n\tz = ',num2str(specialParams.maxSlope(1)),'\n\tT = ',num2str(specialParams.maxSlope(2)),'\n\tSlope = ',num2str(specialParams.maxSlope(3)),'\n',...
+                          '0 Crossing\n\tz = ',num2str(specialParams.xCross),'\n',...
+                          'xHI Percentage\n\t75%% z = ',num2str(specialParams.xHI75),'\n\t50%% z = ',num2str(specialParams.xHI50),'\n\t25%% z = ',num2str(specialParams.xHI25),'\n',...
+                          'Heating Transition\n\tz = ',num2str(specialParams.THT(1)),'\n\tT = ',num2str(specialParams.THT(2)),'\n'];
+            
+            fid = fopen([fileName,'.txt'],'w');
+            fwrite(fid,sprintf(niceOutput));
+            fclose(fid);
         end
         
         
@@ -169,7 +177,7 @@ classdef SIM21Analysis
             SIM21Analysis.message('plotting power spectrum');
             
             % Get K data
-            MK = SIM21Analysis.importMatrix('K');
+            MK = SIM21Utils.importMatrix('K');
             % Find index of closest K
             KInd = find(diff(sign(MK-k)));
             
@@ -215,17 +223,9 @@ classdef SIM21Analysis
         end
         
         
-        function plotPowerSpectrumByZ(outputPath,runID,figTitle,figXLabel,figYLabel)
-            zs = [8,8.7,10.37,17,11.53,22,30];
-            lineColors = {'r','g','b','m','c','k','k'};
-            lineStyles = {'-','-','-','-','-','-','--'};
-            lineWidths = ones(1,7);
-            SIM21Analysis.plotPowerSpectrumByZs(outputPath,runID,zs,lineColors,lineStyles,lineWidths,figTitle,figXLabel,figYLabel);
-        end
-        
         function plotPowerSpectrumByZs(outputPath,runID,zs,lineColors,lineStyles,lineWidths,figTitle,figXLabel,figYLabel)
             
-            MK = SIM21Analysis.importMatrix('K');
+            MK = SIM21Utils.importMatrix('K');
             PowerMat = importdata([outputPath,'PowerMat_',runID,'.mat']);
             
             figName = [outputPath,'PwSpZ_',runID,'.png'];
@@ -266,9 +266,6 @@ classdef SIM21Analysis
             dataFileName = strcat(dataPath,magic,'_',num2str(z),'_',runID,'.mat');
         end
         
-        function M = importMatrix(MName)
-            M = importdata(['Matrices/',MName,'.mat']);
-        end
         
         function message(msg)
             % SIM21Analysis class output
