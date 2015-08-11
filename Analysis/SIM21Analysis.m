@@ -12,7 +12,7 @@ classdef SIM21Analysis
         %PwSpZ = [5:0.1:15,16:40];
         PwSpZ = [6:0.1:15,16:40];
     end
-
+    
     methods(Static)
         function analyse()
             dataPath = '/scratch100/matanlotem/Data/';
@@ -24,18 +24,17 @@ classdef SIM21Analysis
             SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.1);
             SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.5);
         end
-
-
+        
+        
         function specialParams=calcSpecialParams(dataPath,outputPath,runID)
             %Calculate interesting parameters for specific run
-            
             SIM21Analysis.message('calculating parameters');
             interpStep=0.001;
-
+            
             xHIData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID),interpStep);
             TKData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID),interpStep);
             T21cmData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,runID),interpStep);
-              
+            
             % MIN / MAX
             minT21cmInd = find(T21cmData(2,:)==min(T21cmData(2,:)));
             maxT21cmInd = find(T21cmData(2,:)==max(T21cmData(2,:)));
@@ -83,16 +82,16 @@ classdef SIM21Analysis
             fwrite(fid,sprintf(niceOutput));
             fclose(fid);
         end
-
-
+        
+        
         function plotZGraphs(dataPath,outputPath,runID)
             % Plot TK, T21cm and xHI Graphs
             SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID,'TK(z)','1+z','TK [mK]'); %TK
             SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,runID,'T21cm(z)','1+z','T21cm [mK]'); %T21cm
             SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID,'xHI(z)','1+z','xHi'); %xHI
         end
-
-
+        
+        
         function plotByZ(dataPath,outputPath,z,magic,runID,figTitle,figXLabel,figYLabel)
             % Plot different graphs as function of Z
             
@@ -104,8 +103,8 @@ classdef SIM21Analysis
             figName = strcat(outputPath,magic,'_',runID,'.png');
             SIM21Analysis.plotData(outputPath,figName,XYData,figTitle,figXLabel,figYLabel);
         end
-
-
+        
+        
         function dataMat=getZData(dataPath,outputPath,z,magic,runID)
             % Create or import mean data matrix
             
@@ -131,8 +130,8 @@ classdef SIM21Analysis
                 save(dataName,'dataMat');
             end
         end
-
-
+        
+        
         function XYData=interpData(dataMat,interpStep)
             % Interpolate data matrix
             SIM21Analysis.message('interpolating');
@@ -142,8 +141,8 @@ classdef SIM21Analysis
             y_i = interp1(x,y,x_i,'spline');
             XYData = cat(1,x_i,y_i);
         end
-
-
+        
+        
         function plotData(outputPath,outputName,XYData,figTitle,figXLabel,figYLabel)
             % Plot data by XY coordinates
             SIM21Analysis.message('plotting');
@@ -154,12 +153,12 @@ classdef SIM21Analysis
             xlabel(figXLabel,'FontSize',12);
             ylabel(figYLabel,'FontSize',12);
             hold off;
-
+            
             SIM21Analysis.message('saving plot');
             saveas(f,outputName);
         end
-
-
+        
+        
         function plotPowerSpectrumByK(outputPath,runID,k)
             SIM21Analysis.message('plotting power spectrum');
             
@@ -167,35 +166,49 @@ classdef SIM21Analysis
             MK = SIM21Analysis.importMatrix('K');
             KInd = find(diff(sign(MK-k)));
             
-            PowerMat = importdata([outputPath,'PowerMat_',runID,'.mat']);
-            PowerMat_iso = importdata([outputPath,'PowerMat_iso_',runID,'.mat']);
-            PowerMat_X = importdata([outputPath,'PowerMat_X_',runID,'.mat']);
-            PowerMat_del = importdata([outputPath,'PowerMat_del_',runID,'.mat']);
-
-            PS = (MK(KInd).^3.*squeeze(real(PowerMat(:,KInd)))/(2*pi^2));
-            PSiso = (MK(KInd).^3.*squeeze(real(PowerMat_iso(:,KInd)))/(2*pi^2));
-            PSx = (MK(KInd).^3.*squeeze(real(PowerMat_X(:,KInd)))/(2*pi^2) );
-            PSdel = (MK(KInd).^3.*squeeze(real(PowerMat_del(:,KInd)))/(2*pi^2));
-            zPS = min(SIM21Analysis.PwSpZ):0.01:max(SIM21Analysis.PwSpZ); 
-
             delx = 0.04;
             x2=min(SIM21Analysis.PwSpZ):delx:max(SIM21Analysis.PwSpZ); 
             Ind = floor(1+delx*(0:length(x2)-1)/0.01);
-
+            zPS = min(SIM21Analysis.PwSpZ):0.01:max(SIM21Analysis.PwSpZ); 
+            
             f=figure();
             hold on
-            PS1 = interp1(SIM21Analysis.PwSpZ,(PS'),zPS,'spline');
-            hl1 = loglog(1+x2,PS1(Ind).*(x2>6.9),'Color','r','LineWidth',1);
             
-            PS1 = interp1(SIM21Analysis.PwSpZ,(PSiso'),zPS,'spline');
-            loglog(1+x2,PS1(Ind).*(x2>6.9),'Color',[0,127/255,0],'LineStyle','-','LineWidth',1);
+            function doPowerSpectrum(MName,Msign,lineColor,lineStyle,lineWidth)
+                PowerMat = importdata([outputPath,MName,'_',runID,'.mat']);
+                PS = (MK(KInd).^3.*squeeze(real(PowerMat(:,KInd)))/(2*pi^2));
+                PS1 = interp1(SIM21Analysis.PwSpZ,Msign*PS',zPS,'spline');
+                loglog(1+x2,PS1(Ind).*(x2>6.9),'Color',lineColor,'LineStyle',lineStyle,'LineWidth',lineWidth);
+            end
             
-            PS1 = interp1(SIM21Analysis.PwSpZ,real(PSx'),zPS,'spline');
-            loglog(1+x2,PS1(Ind).*(x2>6.9),'Color','b','LineStyle','-','LineWidth',1);% color green [0,127/255,0]
-            PS1 = interp1(SIM21Analysis.PwSpZ,-real(PSx'),zPS,'spline');
-            loglog(1+x2,PS1(Ind).*(x2>6.9),'Color','b','LineStyle',':','LineWidth',2);% color green [0,127/255,0
-            PS1 = interp1(SIM21Analysis.PwSpZ,(PSdel'),zPS,'spline');
-            loglog(1+x2,PS1(Ind).*(x2>6.9),'Color','k','LineStyle','-','LineWidth',1);% color green [0,127/255,0]
+            doPowerSpectrum('PowerMat',1,'r','-',1);
+            doPowerSpectrum('PowerMat_iso',1,[0,127/255,0],'-',1);
+            doPowerSpectrum('PowerMat_X',1,'b','-',1);
+            doPowerSpectrum('PowerMat_X',-1,'b',':',2);
+            doPowerSpectrum('PowerMat_del',1,'k','-',1);
+            
+%            PowerMat = importdata([outputPath,'PowerMat_',runID,'.mat']);
+%            PowerMat_iso = importdata([outputPath,'PowerMat_iso_',runID,'.mat']);
+%            PowerMat_X = importdata([outputPath,'PowerMat_X_',runID,'.mat']);
+%            PowerMat_del = importdata([outputPath,'PowerMat_del_',runID,'.mat']);
+%            
+%            PS = (MK(KInd).^3.*squeeze(real(PowerMat(:,KInd)))/(2*pi^2));
+%            PSiso = (MK(KInd).^3.*squeeze(real(PowerMat_iso(:,KInd)))/(2*pi^2));
+%            PSx = (MK(KInd).^3.*squeeze(real(PowerMat_X(:,KInd)))/(2*pi^2) );
+%            PSdel = (MK(KInd).^3.*squeeze(real(PowerMat_del(:,KInd)))/(2*pi^2));
+%            
+%            PS1 = interp1(SIM21Analysis.PwSpZ,(PS'),zPS,'spline');
+%            hl1 = loglog(1+x2,PS1(Ind).*(x2>6.9),'Color','r','LineWidth',1);
+%            
+%            PS1 = interp1(SIM21Analysis.PwSpZ,(PSiso'),zPS,'spline');
+%            loglog(1+x2,PS1(Ind).*(x2>6.9),'Color',[0,127/255,0],'LineStyle','-','LineWidth',1);
+%            
+%            PS1 = interp1(SIM21Analysis.PwSpZ,real(PSx'),zPS,'spline');
+%            loglog(1+x2,PS1(Ind).*(x2>6.9),'Color','b','LineStyle','-','LineWidth',1);% color green [0,127/255,0]
+%            PS1 = interp1(SIM21Analysis.PwSpZ,-real(PSx'),zPS,'spline');
+%            loglog(1+x2,PS1(Ind).*(x2>6.9),'Color','b','LineStyle',':','LineWidth',2);% color green [0,127/255,0
+%            PS1 = interp1(SIM21Analysis.PwSpZ,(PSdel'),zPS,'spline');
+%            loglog(1+x2,PS1(Ind).*(x2>6.9),'Color','k','LineStyle','-','LineWidth',1);% color green [0,127/255,0]
             xlim([7,40])
             ylim([1e-4,1e3])
             xlabel('1+z','FontSize',12);
@@ -206,8 +219,8 @@ classdef SIM21Analysis
             SIM21Analysis.message('saving plot');
             saveas(f,figName);
          end
-
-
+        
+        
         function dataFileName = genDataFileName(dataPath, magic, runID, z)
             % Get raw data matrix file name
             dataFileName = strcat(dataPath,magic,'_',num2str(z),'_',runID,'.mat');
@@ -216,11 +229,10 @@ classdef SIM21Analysis
         function M = importMatrix(MName)
             M = importdata(['Matrices/',MName,'.mat']);
         end
-
+        
         function message(msg)
             % Analysis class output
             disp(msg)
         end
-
     end
 end
