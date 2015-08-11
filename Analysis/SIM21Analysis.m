@@ -21,8 +21,7 @@ classdef SIM21Analysis
             
             %SIM21Analysis.plotZGraphs(dataPath,outputPath,runID);
             %specialParams=SIM21Analysis.calcSpecialParams(dataPath,outputPath,runID);
-            SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.1);
-            SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.5);
+            SIM21Analysis.plotPowerSpectrums(outputPath,runID);
         end
         
         
@@ -159,22 +158,36 @@ classdef SIM21Analysis
         end
         
         
-        function plotPowerSpectrumByK(outputPath,runID,k)
+        function plotPowerSpectrums(outputPath,runID)
+            %SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.1,['Atomic, Old spectrum - K=',num2str(0.1)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
+            %SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.5,['Atomic, Old spectrum - K=',num2str(0.5)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
+            SIM21Analysis.plotPowerSpectrumByZ(outputPath,runID,'Atomic, Old spectrum','k [Mpc^{-1}]','k^3P(k)/2\pi^2 [mK^2]');
+        end
+        
+        
+        function plotPowerSpectrumByK(outputPath,runID,k,figTitle,figXLabel,figYLabel)
             SIM21Analysis.message('plotting power spectrum');
             
-            figName = [outputPath,'PwSpK_',num2str(k),'_',runID,'.png'];
+            % Get K data
             MK = SIM21Analysis.importMatrix('K');
+            % Find index of closest K
             KInd = find(diff(sign(MK-k)));
             
+            % Interpolation Parameters
+            interpStep = 0.01;
+            zPS = min(SIM21Analysis.PwSpZ):interpStep:max(SIM21Analysis.PwSpZ); 
+            
+            % Plotting Paramters
+            figName = [outputPath,'PwSpK_',num2str(k),'_',runID,'.png'];
             delx = 0.04;
             x2=min(SIM21Analysis.PwSpZ):delx:max(SIM21Analysis.PwSpZ); 
             Ind = floor(1+delx*(0:length(x2)-1)/0.01);
-            zPS = min(SIM21Analysis.PwSpZ):0.01:max(SIM21Analysis.PwSpZ); 
             
             f=figure();
             hold on
             
             function doPowerSpectrum(MName,Msign,lineColor,lineStyle,lineWidth)
+                % Import -> Calc for specific K -> Interpolate -> Plot
                 PowerMat = importdata([outputPath,MName,'_',runID,'.mat']);
                 PS = (MK(KInd).^3.*squeeze(real(PowerMat(:,KInd)))/(2*pi^2));
                 PS1 = interp1(SIM21Analysis.PwSpZ,Msign*PS',zPS,'spline');
@@ -187,38 +200,65 @@ classdef SIM21Analysis
             doPowerSpectrum('PowerMat_X',-1,'b',':',2);
             doPowerSpectrum('PowerMat_del',1,'k','-',1);
             
-%            PowerMat = importdata([outputPath,'PowerMat_',runID,'.mat']);
-%            PowerMat_iso = importdata([outputPath,'PowerMat_iso_',runID,'.mat']);
-%            PowerMat_X = importdata([outputPath,'PowerMat_X_',runID,'.mat']);
-%            PowerMat_del = importdata([outputPath,'PowerMat_del_',runID,'.mat']);
-%            
-%            PS = (MK(KInd).^3.*squeeze(real(PowerMat(:,KInd)))/(2*pi^2));
-%            PSiso = (MK(KInd).^3.*squeeze(real(PowerMat_iso(:,KInd)))/(2*pi^2));
-%            PSx = (MK(KInd).^3.*squeeze(real(PowerMat_X(:,KInd)))/(2*pi^2) );
-%            PSdel = (MK(KInd).^3.*squeeze(real(PowerMat_del(:,KInd)))/(2*pi^2));
-%            
-%            PS1 = interp1(SIM21Analysis.PwSpZ,(PS'),zPS,'spline');
-%            hl1 = loglog(1+x2,PS1(Ind).*(x2>6.9),'Color','r','LineWidth',1);
-%            
-%            PS1 = interp1(SIM21Analysis.PwSpZ,(PSiso'),zPS,'spline');
-%            loglog(1+x2,PS1(Ind).*(x2>6.9),'Color',[0,127/255,0],'LineStyle','-','LineWidth',1);
-%            
-%            PS1 = interp1(SIM21Analysis.PwSpZ,real(PSx'),zPS,'spline');
-%            loglog(1+x2,PS1(Ind).*(x2>6.9),'Color','b','LineStyle','-','LineWidth',1);% color green [0,127/255,0]
-%            PS1 = interp1(SIM21Analysis.PwSpZ,-real(PSx'),zPS,'spline');
-%            loglog(1+x2,PS1(Ind).*(x2>6.9),'Color','b','LineStyle',':','LineWidth',2);% color green [0,127/255,0
-%            PS1 = interp1(SIM21Analysis.PwSpZ,(PSdel'),zPS,'spline');
-%            loglog(1+x2,PS1(Ind).*(x2>6.9),'Color','k','LineStyle','-','LineWidth',1);% color green [0,127/255,0]
+            % Style Plot
             xlim([7,40])
             ylim([1e-4,1e3])
-            xlabel('1+z','FontSize',12);
-            ylabel('k^3P(k)/2\pi^2 [mK^2]','FontSize',12);
-            title('Atomic, Old spectrum','FontSize',15,'FontWeight','Bold')
+            
+            title(figTitle,'FontSize',18);
+            xlabel(figXLabel,'FontSize',12);
+            ylabel(figYLabel,'FontSize',12);
+            
             hold off
             
             SIM21Analysis.message('saving plot');
             saveas(f,figName);
-         end
+        end
+        
+        
+        function plotPowerSpectrumByZ(outputPath,runID,figTitle,figXLabel,figYLabel)
+            zs = [8,8.7,10.37,17,11.53,22,30];
+            lineColors = {'r','g','b','m','c','k','k'};
+            lineStyles = {'-','-','-','-','-','-','--'};
+            lineWidths = ones(1,7);
+            SIM21Analysis.plotPowerSpectrumByZs(outputPath,runID,zs,lineColors,lineStyles,lineWidths,figTitle,figXLabel,figYLabel);
+        end
+        
+        function plotPowerSpectrumByZs(outputPath,runID,zs,lineColors,lineStyles,lineWidths,figTitle,figXLabel,figYLabel)
+            
+            MK = SIM21Analysis.importMatrix('K');
+            PowerMat = importdata([outputPath,'PowerMat_',runID,'.mat']);
+            
+            figName = [outputPath,'PwSpZ_',runID,'.png'];
+            f=figure();
+            hold on
+            
+            function doPowerSpectrum(z,lineColor,lineStyle,lineWidth)
+                % Calc for specific z -> Interpolate -> Plot
+                zInd = find(~(SIM21Analysis.PwSpZ-z));
+                if isempty(zInd)
+                    zInd = find(diff(sign(SIM21Analysis.PwSpZ-z)));
+                end
+                
+                PS1 = smooth((MK.^3.*squeeze(PowerMat(zInd,:))/(2*pi^2)),'moving');
+                loglog(MK,PS1,'Color',lineColor,'LineStyle',lineStyle,'LineWidth',lineWidth);
+            end
+            
+            for i = 1:length(zs)
+                doPowerSpectrum(zs(i),lineColors{i},lineStyles{i},lineWidths(i));
+            end
+            
+            xlim([0.03,1])
+            ylim([0.01,1000])
+            
+            title(figTitle,'FontSize',18);
+            xlabel(figXLabel,'FontSize',12);
+            ylabel(figYLabel,'FontSize',12);
+            
+            hold off
+            
+            SIM21Analysis.message('saving plot');
+            saveas(f,figName);
+        end
         
         
         function dataFileName = genDataFileName(dataPath, magic, runID, z)
@@ -231,7 +271,7 @@ classdef SIM21Analysis
         end
         
         function message(msg)
-            % Analysis class output
+            % SIM21Analysis class output
             disp(msg)
         end
     end
