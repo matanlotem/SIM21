@@ -25,8 +25,8 @@ function ID = ParamStudy(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayP
     Nmu = 11;
 
     Nvec = MyCube;
-    zspec = [6:0.1:15, 16:1:40];
-    %zspec = 6:0.1:6.2;
+    %zspec = [6:0.1:15, 16:1:40];
+    zspec = 6:0.1:6.2;
     PowerMat=zeros(length(zspec),100);
     PowerMat_iso=zeros(length(zspec),100);
     PowerMat_X=zeros(length(zspec),100);
@@ -83,13 +83,13 @@ function ID = ParamStudy(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayP
         PowerMatMu(indz,:,:) = Pkm;
     end
 
-    save(strcat(pathname_Output,'N_PowerMat',ID,'.mat'),'PowerMat');
-    save(strcat(pathname_Output,'N_PowerMat_iso',ID,'.mat'),'PowerMat_iso');
-    save(strcat(pathname_Output,'N_PowerMat_X',ID,'.mat'),'PowerMat_X');
-    save(strcat(pathname_Output,'N_PowerMat_del',ID,'.mat'),'PowerMat_del');
-    save(strcat(pathname_Output,'N_PowerMat_0',ID,'.mat'),'PowerMat_0');
-    save(strcat(pathname_Output,'N_PowerMat_2',ID,'.mat'),'PowerMat_2');
-    save(strcat(pathname_Output,'N_PowerMat_4',ID,'.mat'),'PowerMat_4');
-    save(strcat(pathname_Output,'N_PowerMat_mu',ID,'.mat'),'PowerMatMu');
+    save(strcat(pathname_Output,'N_TPowerMat',ID,'.mat'),'PowerMat');
+    save(strcat(pathname_Output,'N_TPowerMat_iso',ID,'.mat'),'PowerMat_iso');
+    save(strcat(pathname_Output,'N_TPowerMat_X',ID,'.mat'),'PowerMat_X');
+    save(strcat(pathname_Output,'N_TPowerMat_del',ID,'.mat'),'PowerMat_del');
+    save(strcat(pathname_Output,'N_TPowerMat_0',ID,'.mat'),'PowerMat_0');
+    save(strcat(pathname_Output,'N_TPowerMat_2',ID,'.mat'),'PowerMat_2');
+    save(strcat(pathname_Output,'N_TPowerMat_4',ID,'.mat'),'PowerMat_4');
+    save(strcat(pathname_Output,'N_TPowerMat_mu',ID,'.mat'),'PowerMatMu');
     toc;
 end

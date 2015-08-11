@@ -97,7 +97,7 @@ classdef SIM21Gets
             %  Reion=0.075;
             %  feedback=0;
             %  p=0;
-            load ('Planck_parameters');
+            load Planck_parameters
             
             S_alpha2=SIM21Gets.getSalpha(TK,z0);
             JA_alpha = SIM21Gets.getLyA(TK,z0,ncube,fstar,flag,flagM,XeffTerm,Ispec,Reion,feedback,p,pop,FSfunc,photoheatingVersion);
