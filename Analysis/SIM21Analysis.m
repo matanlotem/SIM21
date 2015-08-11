@@ -150,7 +150,7 @@ classdef SIM21Analysis
             specialParams.xHI25 = xHIData(1,xHI25Ind);
             
             % Heating Transition: Tcmb = Tk
-            TCMBData = SIM21Analysis.interpData(cat(1,SIM21Analysis.TKZ,2.725*(1+SIM21Analysis.TKZ)),interpStep);
+            TCMBData = SIM21Analysis.interpData(cat(1,SIM21Analysis.TKZ,SIM21Gets.getTcmb(SIM21Analysis.TKZ))),interpStep);
             THTInd = find(diff(sign(TKData(2,:)-TCMBData(2,:))));
             specialParams.THT = TKData(:,THTInd);
             
