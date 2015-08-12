@@ -150,7 +150,7 @@ classdef SIM21Analysis
             specialParams.xHI25 = xHIData(1,xHI25Ind);
             
             % Heating Transition: Tcmb = Tk
-            TCMBData = SIM21Analysis.interpData(cat(1,SIM21Analysis.TKZ,SIM21Gets.getTcmb(SIM21Analysis.TKZ))),interpStep);
+            TCMBData = SIM21Analysis.interpData(cat(1,SIM21Analysis.TKZ,SIM21Gets.getTcmb(SIM21Analysis.TKZ)),interpStep);
             THTInd = find(diff(sign(TKData(2,:)-TCMBData(2,:))));
             specialParams.THT = TKData(:,THTInd);
             
@@ -192,7 +192,6 @@ classdef SIM21Analysis
             Ind = floor(1+delx*(0:length(x2)-1)/0.01);
             
             f=figure();
-            hold on
             
             function doPowerSpectrum(MName,Msign,lineColor,lineStyle,lineWidth)
                 % Import -> Calc for specific K -> Interpolate -> Plot
@@ -200,6 +199,7 @@ classdef SIM21Analysis
                 PS = (MK(KInd).^3.*squeeze(real(PowerMat(:,KInd)))/(2*pi^2));
                 PS1 = interp1(SIM21Analysis.PwSpZ,Msign*PS',zPS,'spline');
                 loglog(1+x2,PS1(Ind).*(x2>6.9),'Color',lineColor,'LineStyle',lineStyle,'LineWidth',lineWidth);
+                hold on
             end
             
             doPowerSpectrum('PowerMat',1,'r','-',1);
@@ -230,7 +230,6 @@ classdef SIM21Analysis
             
             figName = [outputPath,'PwSpZ_',runID,'.png'];
             f=figure();
-            hold on
             
             function doPowerSpectrum(z,lineColor,lineStyle,lineWidth)
                 % Calc for specific z -> Interpolate -> Plot
@@ -245,10 +244,11 @@ classdef SIM21Analysis
             
             for i = 1:length(zs)
                 doPowerSpectrum(zs(i),lineColors{i},lineStyles{i},lineWidths(i));
+                hold on
             end
             
-            xlim([0.03,1])
-            ylim([0.01,1000])
+            xlim([0.03,1]);
+            ylim([0.01,1000]);
             
             title(figTitle,'FontSize',18);
             xlabel(figXLabel,'FontSize',12);
