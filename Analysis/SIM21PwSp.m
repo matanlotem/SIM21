@@ -1,6 +1,6 @@
 classdef SIM21PwSp
     methods(Static)
-        function ID = ParamStudy(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayParam,MyPop,FSfunc,photoheatingVersion,zeta) 
+        function ID = getPwSp(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayParam,MyPop,FSfunc,photoheatingVersion,zeta) 
             tic;
             global pathname_Data1 % e.g. scratch (to save JLW, x_e, Lion, eps, Jalpha)
             global pathname_Data2
@@ -266,11 +266,12 @@ classdef SIM21PwSp
                 TFile = TFiles(i);
                 flag = isequal(importdata([pathname_Output,TFile.name]),importdata([pathname_Output,'N_',TFile.name]));
                 disp([num2str(flag),' ',TFile.name]);
+            end
         end
         
         
         function testParams()
-            SIM21PwSp.PWSpectrum(0,0.05,1,16.5,1,1,0.075,0,0,2,1,2,20);
+            SIM21PwSp.getPwSp(0,0.05,1,16.5,1,1,0.075,0,0,2,1,2,20);
         end
     end
 end
