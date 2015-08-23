@@ -27,13 +27,13 @@ def sendJob(queName,codePath,outputPath,outputName,matlabCmd,otherArgs=''):
     os.system(qCmd)
 
 def getCases(dataPath):
-    qubeNum = 9
+    cubeNum = 9
     f = file(dataPath)
     data=[line.split('\t') for line in f.read().splitlines()]
     f.close()
     paramCases = {}
     for line in data[1:]:
-        paramCases[int(line[0])] = [qubeNum]+line[1:13]
+        paramCases[int(line[0])] = [cubeNum]+line[1:13]
     return paramCases
 
 def getID(paramCases,caseNum):
@@ -95,4 +95,4 @@ dataFolders = [['/scratch300/matanlotem/Data/',[]],
 
 paramCases = getCases(paramDataPath)
 #removeData(paramCases,range(1,24),dataFolders)
-sendCasesJobs(paramCases,range(5,25))
+sendCasesJobs(paramCases,range(59,65))
