@@ -4,11 +4,13 @@ classdef SIM21Analysis
         xHIMagic = 'xHI';
         xHIZ = [6:0.1:15,16:60];
         TKMagic = 'TK';
-        TKZ = 5:64;
+        TKZ = [5:64];
         T21cmMagic = 'T21cm';
-        T21cmZ = 6:60;
+        T21cmZ = [6:60];
         NeutMagic = 'Neut';
         NeutZ = [6:0.1:15,16:60];
+        EpsMagic = 'eps';
+        EpsZ = [6:60];
         PwSpZ = [6:0.1:15,16:40];
     end
     
@@ -24,11 +26,71 @@ classdef SIM21Analysis
         end
         
         
-        function plotZGraphs(dataPath,outputPath,runID)
+        function plotZGraphs(dataPath,outputPath,runID,add2Title)
             % Plot TK, T21cm and xHI Graphs
-            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID,'TK(z)','1+z','TK [mK]'); %TK
-            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,runID,'T21cm(z)','1+z','T21cm [mK]'); %T21cm
-            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID,'xHI(z)','1+z','xHi'); %xHI
+            SIM21Analysis.plotZTKGraph(dataPath,outputPath,runID,add2Title);
+            SIM21Analysis.plotZT21cmGraph(dataPath,outputPath,runID,add2Title);
+            SIM21Analysis.plotZXHIGraph(dataPath,outputPath,runID,add2Title);
+            %SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID,'xy',[min(SIM21Analysis.TKZ)-1,max(SIM21Analysis.TKZ)+1],[1e-4,1e3],'TK(z)','1+z','TK [K]'); %TK
+            %SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,runID,'x',[min(SIM21Analysis.T21cmZ)-1,max(SIM21Analysis.T21cmZ)+1],[],'T21cm(z)','1+z','T21cm [mK]'); %T21cm
+            %SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID,'',[min(SIM21Analysis.xHIZ)-1,max(SIM21Analysis.xHIZ)+1],[0,1.1],'xHI(z)','1+z','xHi'); %xHI
+        end
+        
+        
+        function plotZTKGraph(dataPath,outputPath,runID,add2Title)
+            figSettings.log = 'xy';
+            figSettings.xLim = [min(SIM21Analysis.TKZ),max(SIM21Analysis.TKZ)+10];
+            %figSettings.yLim = [4,1000];
+            figSettings.yTick = [3,10,30,100,300,1000,3000,10000];
+            if ~isempty(add2Title)
+                add2Title = [' - ',add2Title];
+            end
+            figSettings.title = ['TK(z)',add2Title];
+            figSettings.xLabel = '1+z';
+            figSettings.yLabel = 'TK [K]';
+            figSettings.lines = {cat(1,SIM21Analysis.TKZ(2:end),SIM21Gets.getTcmb(SIM21Analysis.TKZ(2:end)))};
+            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID,figSettings);
+        end
+        
+        
+        function plotZT21cmGraph(dataPath,outputPath,runID,add2Title)
+            figSettings.log = 'x';
+            figSettings.xLim = [min(SIM21Analysis.T21cmZ),max(SIM21Analysis.T21cmZ)+10];
+            if ~isempty(add2Title)
+                add2Title = [' - ',add2Title];
+            end
+            figSettings.title = ['T21cm(z)',add2Title];
+            figSettings.xLabel = '1+z';
+            figSettings.yLabel = 'T21cm [mK]';
+            figSettings.lines = {cat(1,SIM21Analysis.T21cmZ(2:end),zeros(length(SIM21Analysis.T21cmZ(2:end))))};
+            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,runID,figSettings);
+        end
+        
+        
+        function plotZXHIGraph(dataPath,outputPath,runID,add2Title)
+            figSettings.xLim = [min(SIM21Analysis.xHIZ),max(SIM21Analysis.xHIZ)+1];
+            figSettings.yLim = [0,1.1];
+            if ~isempty(add2Title)
+                add2Title = [' - ',add2Title];
+            end
+            figSettings.title = ['xHI(z)',add2Title];
+            figSettings.xLabel = '1+z';
+            figSettings.yLabel = 'xHI';
+            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID,figSettings);
+        end
+        
+        
+        function plotZEpsGraph(dataPath,outputPath,runID,add2Title)
+            figSettings.log = 'y';
+            %figSettings.xLim = [min(SIM21Analysis.EpsZ),max(SIM21Analysis.EpsZ)+1];
+            figSettings.yTick = repmat([10],1,13).^[-44:3:-8];
+            if ~isempty(add2Title)
+                add2Title = [' - ',add2Title];
+            end
+            figSettings.title = ['Epsilon(z)',add2Title];
+            figSettings.xLabel = '1+z';
+            figSettings.yLabel = 'Epsilon';
+            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.EpsZ,SIM21Analysis.EpsMagic,runID,figSettings);
         end
         
         
@@ -48,7 +110,7 @@ classdef SIM21Analysis
         end
         
         
-        function plotByZ(dataPath,outputPath,z,magic,runID,figTitle,figXLabel,figYLabel)
+        function plotByZ(dataPath,outputPath,z,magic,runID,figSettings)
             % Plot different graphs as function of Z
             
             SIM21Analysis.message(['=== STARTING ',magic,' ===']);
@@ -57,14 +119,14 @@ classdef SIM21Analysis
             XYData = SIM21Analysis.interpData(dataMat,interpStep);
             XYData(1,:) = XYData(1,:) + 1; % z+1
             figName = [outputPath,magic,runID,'.png'];
-            SIM21Analysis.plotData(outputPath,figName,XYData,figTitle,figXLabel,figYLabel);
+            SIM21Analysis.plotData(outputPath,figName,XYData,figSettings);
         end
         
         
         function dataMat=getZData(dataPath,outputPath,z,magic,runID)
             % Create or import mean data matrix
             
-            dataName = strcat(outputPath,magic,'_Data',runID,'.mat');
+            dataName = [outputPath,magic,'_Data',runID,'.mat'];
             
             % Check if output exists and load
             if exist(dataName, 'file') == 2
@@ -99,15 +161,78 @@ classdef SIM21Analysis
         end
         
         
-        function plotData(outputPath,outputName,XYData,figTitle,figXLabel,figYLabel)
+        %function plotData(outputPath,outputName,XYData,figLog,figXLim,figYLim,figXTick,figYTick,figTitle,figXLabel,figYLabel)
+        function plotData(outputPath,outputName,XYData,figSettings)
             % Plot data by XY coordinates
             SIM21Analysis.message('plotting');
             f=figure();
+            
+            x = XYData(1,:);
+            y = XYData(2,:);
+            
+            % Set logarithmic axes
+            if isfield(figSettings,'log')
+                if isequal(figSettings.log,'yx')
+                    figSettings.log = 'xy';
+                end
+                switch figSettings.log
+                    case 'x'
+                        semilogx(x,y);
+                    case 'y'
+                        semilogy(x,y);
+                    case 'xy'
+                        loglog(x,y)
+                    otherwise
+                        plot(x,y);
+                end
+            else
+                plot(x,y);
+            end
             hold on;
-            plot(XYData(1,:),XYData(2,:));
-            title(figTitle,'FontSize',18);
-            xlabel(figXLabel,'FontSize',12);
-            ylabel(figYLabel,'FontSize',12);
+            
+            % Interesting lines (for example zero line)
+            if isfield(figSettings,'lines')
+                for figLine = figSettings.lines
+                    plot(figLine{1}(1,:),figLine{1}(2,:),':k','lineWidth',0.1);
+                end
+            end
+            
+            % Set limits
+            if isfield(figSettings,'xLim')
+                xlim(figSettings.xLim);
+            end
+            if isfield(figSettings,'yLim')
+                ylim(figSettings.yLim);
+            end
+            
+            % Set tick marks
+            ax = gca;
+            if isfield(figSettings,'xTick');
+                ax.XTick = figSettings.xTick;
+            else
+                ax.XTick = floor(min(x)/10)*10:10:max(x);
+            end
+            if isfield(figSettings,'yTick')
+                ax.YTick = figSettings.yTick;
+            else
+                numOfYTicks = 5;
+                yhop = (max(y)-min(y))/numOfYTicks;
+                ymag = 10^floor(log10(yhop));
+                yhop = floor(yhop/ymag)*ymag;
+                ax.YTick = (ceil(min(y) / yhop) * yhop):yhop:max(y);
+            end
+            
+            % Titles and Labels
+            if isfield(figSettings,'title');
+                title(figSettings.title,'FontSize',18);
+            end
+            if isfield(figSettings,'xLabel');
+                xlabel(figSettings.xLabel,'FontSize',12);
+            end
+            if isfield(figSettings,'yLabel');
+                ylabel(figSettings.yLabel,'FontSize',12);
+            end
+            
             hold off;
             
             SIM21Analysis.message('saving plot');
@@ -221,8 +346,8 @@ classdef SIM21Analysis
             doPowerSpectrum('PowerMat_del',1,'k','-',1);
             
             % Style Plot
-            xlim([7,40])
-            ylim([1e-4,1e3])
+            xlim([7,40]);
+            ylim([1e-4,1e3]);
             
             title(figTitle,'FontSize',18);
             xlabel(figXLabel,'FontSize',12);
@@ -278,7 +403,7 @@ classdef SIM21Analysis
             if runID(1) ~= '_'
                 runID = ['_',runID];
             end
-            dataFileName = strcat(dataPath,magic,'_',num2str(z),runID,'.mat');
+            dataFileName = [dataPath,magic,'_',num2str(z),runID,'.mat'];
         end
         
         

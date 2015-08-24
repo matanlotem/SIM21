@@ -85,7 +85,8 @@ def runOnNode(node,cmd):
 queName = 'barkana'
 codePath = r'/a/home/cc/tree/taucc/students/physics/matanlotem/Work/CODE/Clean/'
 outputPath = r'/a/home/cc/tree/taucc/students/physics/matanlotem/Work/Logs/'
-paramDataPath = r'/a/home/cc/tree/taucc/students/physics/matanlotem/Work/ParamStudy/ParamStudy.txt'
+#paramDataPath = r'/a/home/cc/tree/taucc/students/physics/matanlotem/Work/ParamStudy/ParamStudy.txt'
+paramDataPath = r'/a/home/cc/tree/taucc/students/physics/matanlotem/Work/SIM21/ParamStudy/ParamStudy.txt'
 #paramDataPath = r'C:\Users\Matan\Work\ParamStudy\ParamStudy.txt'
 
 dataFolders = [['/scratch300/matanlotem/Data/',[]],
@@ -95,4 +96,4 @@ dataFolders = [['/scratch300/matanlotem/Data/',[]],
 
 paramCases = getCases(paramDataPath)
 #removeData(paramCases,range(1,24),dataFolders)
-sendCasesJobs(paramCases,range(59,65))
+sendCasesJobs(paramCases,[56])
