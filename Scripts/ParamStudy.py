@@ -96,4 +96,4 @@ dataFolders = [['/scratch300/matanlotem/Data/',[]],
 
 paramCases = getCases(paramDataPath)
 #removeData(paramCases,range(1,24),dataFolders)
-sendCasesJobs(paramCases,[56])
+sendCasesJobs(paramCases,[1])

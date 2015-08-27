@@ -47,10 +47,14 @@ classdef paramStudy < handle
                 paramCases(i).photoHeating = rawData.PH(i);
                 paramCases(i).zeta = char(rawData.Zeta(i));
                 if isequal(paramCases(i).zeta,'PROBLEM')
-                    paramCases(i).zeta = nan;
+                    paramCases(i).zeta = NaN;
+                    paramCases(i).fxHI = NaN;
+                    paramCases(i).atau = NaN;
                     paramCases(i).isgood = false;
                 else
                     paramCases(i).zeta = str2num(paramCases(i).zeta);
+                    paramCases(i).fxHI = rawData.xHI_z_6_(i);
+                    paramCases(i).atau = rawData.tau_1(i);
                     paramCases(i).isgood = true;
                 end
                 paramCases(i).ID = SIM21Utils.getID(paramCases(i).ncube,paramCases(i).fstar,paramCases(i).vbc,paramCases(i).vc,...
@@ -84,16 +88,87 @@ classdef paramStudy < handle
         end
         
         
-        function plotCaseGraphs(obj)
+        function specialParamsTable(obj)
+            headers = ['General\t\t'   ,'minT21cm\t\t' ,'maxT21cm\t\t' ,'minSlope\t\t\t'      ,'maxSlope\t\t\t'      ,'0 Crossing\t\t' ,'xHI percentage\t\t\t\t'       ,'THT\t\t'   ,'final xHI\t\t'        ,'tau\t\t'              ,'\n',...
+                       'Case\t','ID\t' ,'z\t','T\t'    ,'z\t','T\t'    ,'z\t','T\t','slope\t' ,'z\t','T\t','slope\t' ,'z\t','NOC\t'    ,'z75\t','z50\t','z25\t','z0\t' ,'z\t','T\t' ,'planned\t','actual\t' ,'planned\t','actual\t' ,'\n'];
+            tableStr = headers;
+            
+            function cellVal = formatCell(cellVal)
+                if isfloat(cellVal)
+                    cellVal = regexprep(num2str(cellVal),'\s*',',');
+                end
+            end
+            
+            for caseNum = obj.workCases
+                disp(caseNum);
+                xHIData = SIM21Analysis.getZData(obj.dataPath,obj.getCaseOutputPath(caseNum),SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,obj.paramCases(caseNum).ID);
+                fxHI = xHIData(2,1);
+                xHIData = [];
+                atau = SIM21Analysis.checkTau(obj.dataPath,obj.getCaseOutputPath(caseNum),obj.paramCases(caseNum).ID);
+                
+                rowStr = [formatCell(caseNum)                                     ,'\t',...
+                          formatCell(obj.paramCases(caseNum).ID)                  ,'\t',...
+                          formatCell(obj.specialParams(caseNum).minT21cm.z)       ,'\t',...
+                          formatCell(obj.specialParams(caseNum).minT21cm.T)       ,'\t',...
+                          formatCell(obj.specialParams(caseNum).maxT21cm.z)       ,'\t',...
+                          formatCell(obj.specialParams(caseNum).maxT21cm.T)       ,'\t',...
+                          formatCell(obj.specialParams(caseNum).minSlope.z)       ,'\t',...
+                          formatCell(obj.specialParams(caseNum).minSlope.T)       ,'\t',...
+                          formatCell(obj.specialParams(caseNum).minSlope.slope)   ,'\t',...
+                          formatCell(obj.specialParams(caseNum).maxSlope.z)       ,'\t',...
+                          formatCell(obj.specialParams(caseNum).maxSlope.T)       ,'\t',...
+                          formatCell(obj.specialParams(caseNum).maxSlope.slope)   ,'\t',...
+                          formatCell(obj.specialParams(caseNum).xCross.z)         ,'\t',...
+                          formatCell(length(obj.specialParams(caseNum).xCross.z)) ,'\t',...
+                          formatCell(obj.specialParams(caseNum).xHI75.z)          ,'\t',...
+                          formatCell(obj.specialParams(caseNum).xHI50.z)          ,'\t',...
+                          formatCell(obj.specialParams(caseNum).xHI25.z)          ,'\t',...
+                          formatCell(obj.specialParams(caseNum).xHI0.z)           ,'\t',...
+                          formatCell(obj.specialParams(caseNum).THT.z)            ,'\t',...
+                          formatCell(obj.specialParams(caseNum).THT.T)            ,'\t',...
+                          formatCell(obj.paramCases(caseNum).fxHI)                ,'\t',...
+                          formatCell(fxHI)                                        ,'\t',...
+                          formatCell(obj.paramCases(caseNum).atau)                ,'\t',...
+                          formatCell(atau)                                        ,'\n'];
+                tableStr = [tableStr,rowStr];
+            end
+            
+            fileName = [obj.outputPath,'specialParams.xls'];
+            fid = fopen(fileName,'w');
+            fwrite(fid,sprintf(tableStr));
+            fclose(fid);
+        end
+        
+        
+        function plotAllZGraphs(obj)
             for caseNum = obj.workCases
                 disp(caseNum);
                 SIM21Analysis.plotZGraphs(obj.dataPath,obj.getCaseOutputPath(caseNum),obj.paramCases(caseNum).ID,['Case ',num2str(caseNum)]);
+                obj.plotEpsGraph(caseNum);
+                obj.plotXeGraph(caseNum);
             end
         end
         
         
+        function plotEpsGraphs(obj)
+            for caseNum = obj.workCases
+                disp(caseNum);
+                obj.plotEpsGraph(caseNum);
+            end
+        end
         function plotEpsGraph(obj,caseNum)
             SIM21Analysis.plotZEpsGraph(obj.tmpDataPath,obj.getCaseOutputPath(caseNum),obj.paramCases(caseNum).ID,['Case ',num2str(caseNum)]);
+        end
+        
+        
+        function plotXeGraphs(obj)
+            for caseNum = obj.workCases
+                disp(caseNum);
+                obj.plotXeGraph(caseNum);
+            end
+        end
+        function plotXeGraph(obj,caseNum)
+            SIM21Analysis.plotZXeGraph(obj.tmpDataPath,obj.getCaseOutputPath(caseNum),obj.paramCases(caseNum).ID,['Case ',num2str(caseNum)]);
         end
         
         

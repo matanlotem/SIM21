@@ -11,6 +11,14 @@ classdef SIM21Analysis
         NeutZ = [6:0.1:15,16:60];
         EpsMagic = 'eps';
         EpsZ = [6:60];
+        XeMagic = 'xe';
+        XeZ = [5:64];
+        JLWMagic = 'JLW';
+        JLWZ = [6:66];
+        JalphaMagic = 'Jalpha';
+        JalphaZ = [6:60];
+        LionMagic = 'Lion';
+        LionZ = [6:60];
         PwSpZ = [6:0.1:15,16:40];
     end
     
@@ -31,9 +39,6 @@ classdef SIM21Analysis
             SIM21Analysis.plotZTKGraph(dataPath,outputPath,runID,add2Title);
             SIM21Analysis.plotZT21cmGraph(dataPath,outputPath,runID,add2Title);
             SIM21Analysis.plotZXHIGraph(dataPath,outputPath,runID,add2Title);
-            %SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID,'xy',[min(SIM21Analysis.TKZ)-1,max(SIM21Analysis.TKZ)+1],[1e-4,1e3],'TK(z)','1+z','TK [K]'); %TK
-            %SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,runID,'x',[min(SIM21Analysis.T21cmZ)-1,max(SIM21Analysis.T21cmZ)+1],[],'T21cm(z)','1+z','T21cm [mK]'); %T21cm
-            %SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID,'',[min(SIM21Analysis.xHIZ)-1,max(SIM21Analysis.xHIZ)+1],[0,1.1],'xHI(z)','1+z','xHi'); %xHI
         end
         
         
@@ -49,7 +54,7 @@ classdef SIM21Analysis
             figSettings.xLabel = '1+z';
             figSettings.yLabel = 'TK [K]';
             figSettings.lines = {cat(1,SIM21Analysis.TKZ(2:end),SIM21Gets.getTcmb(SIM21Analysis.TKZ(2:end)))};
-            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID,figSettings);
+            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,0,runID,figSettings);
         end
         
         
@@ -63,7 +68,7 @@ classdef SIM21Analysis
             figSettings.xLabel = '1+z';
             figSettings.yLabel = 'T21cm [mK]';
             figSettings.lines = {cat(1,SIM21Analysis.T21cmZ(2:end),zeros(length(SIM21Analysis.T21cmZ(2:end))))};
-            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,runID,figSettings);
+            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,0,runID,figSettings);
         end
         
         
@@ -76,7 +81,7 @@ classdef SIM21Analysis
             figSettings.title = ['xHI(z)',add2Title];
             figSettings.xLabel = '1+z';
             figSettings.yLabel = 'xHI';
-            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID,figSettings);
+            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,0,runID,figSettings);
         end
         
         
@@ -90,7 +95,20 @@ classdef SIM21Analysis
             figSettings.title = ['Epsilon(z)',add2Title];
             figSettings.xLabel = '1+z';
             figSettings.yLabel = 'Epsilon';
-            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.EpsZ,SIM21Analysis.EpsMagic,runID,figSettings);
+            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.EpsZ,SIM21Analysis.EpsMagic,0,runID,figSettings);
+        end
+        
+        
+        function plotZXeGraph(dataPath,outputPath,runID,add2Title)
+            figSettings.log = '';
+            %figSettings.yTick = repmat([10],1,13).^[-44:3:-8];
+            if ~isempty(add2Title)
+                add2Title = [' - ',add2Title];
+            end
+            figSettings.title = ['XE(z)',add2Title];
+            figSettings.xLabel = '1+z';
+            figSettings.yLabel = 'XE';
+            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.XeZ,SIM21Analysis.XeMagic,0,runID,figSettings);
         end
         
         
@@ -110,13 +128,16 @@ classdef SIM21Analysis
         end
         
         
-        function plotByZ(dataPath,outputPath,z,magic,runID,figSettings)
+        function plotByZ(dataPath,outputPath,z,magic,interpStep,runID,figSettings)
             % Plot different graphs as function of Z
             
             SIM21Analysis.message(['=== STARTING ',magic,' ===']);
-            interpStep = 0.1;
             dataMat = SIM21Analysis.getZData(dataPath,outputPath,z,magic,runID);
-            XYData = SIM21Analysis.interpData(dataMat,interpStep);
+            if ~interpStep
+                XYData = dataMat;
+            else
+                XYData = SIM21Analysis.interpData(dataMat,interpStep);
+            end
             XYData(1,:) = XYData(1,:) + 1; % z+1
             figName = [outputPath,magic,runID,'.png'];
             SIM21Analysis.plotData(outputPath,figName,XYData,figSettings);
@@ -279,6 +300,8 @@ classdef SIM21Analysis
             specialParams.xHI50.z = xHIData(1,xHI50Ind);
             xHI25Ind = find(diff(sign(xHIData(2,:)-0.25)));
             specialParams.xHI25.z = xHIData(1,xHI25Ind);
+            xHI0Ind = max(find(xHIData(2,:)==0));
+            specialParams.xHI0.z = xHIData(1,xHI0Ind);
             
             % Heating Transition: Tcmb = Tk
             TCMBData = SIM21Analysis.interpData(cat(1,SIM21Analysis.TKZ,SIM21Gets.getTcmb(SIM21Analysis.TKZ)),interpStep);
@@ -304,7 +327,8 @@ classdef SIM21Analysis
                           'Min Slope\n\tz = ',num2str(specialParams.minSlope.z),'\n\tT = ',num2str(specialParams.minSlope.T),'\n\tSlope = ',num2str(specialParams.minSlope.slope),'\n',... 
                           'Max Slope\n\tz = ',num2str(specialParams.maxSlope.z),'\n\tT = ',num2str(specialParams.maxSlope.T),'\n\tSlope = ',num2str(specialParams.maxSlope.slope),'\n',...
                           '0 Crossing\n\tz = ',num2str(specialParams.xCross.z),'\n',...
-                          'xHI Percentage\n\t75%% z = ',num2str(specialParams.xHI75.z),'\n\t50%% z = ',num2str(specialParams.xHI50.z),'\n\t25%% z = ',num2str(specialParams.xHI25.z),'\n',...
+                          'xHI Percentage\n\t75%% z = ',num2str(specialParams.xHI75.z),'\n\t50%% z = ',num2str(specialParams.xHI50.z),...
+                                        '\n\t25%% z = ',num2str(specialParams.xHI25.z),'\n\t0%% z = ',num2str(specialParams.xHI0.z),'\n',...
                           'Heating Transition\n\tz = ',num2str(specialParams.THT.z),'\n\tT = ',num2str(specialParams.THT.T),'\n'];
             niceOutput = sprintf(niceOutput);
         end
@@ -395,6 +419,27 @@ classdef SIM21Analysis
             
             SIM21Analysis.message('saving plot');
             saveas(f,figName);
+        end
+        
+        
+        function tauCMB = checkTau(dataPath,outputPath,runID)
+            % Aviad's code with fixes - I have no idea what this does...
+            load(SIM21Utils.getMatrixPath('Planck_parameters'));
+
+            zion=[0:0.1:15 16:1:20];
+
+            sigmaT = 6.65e-25; % cm^2
+            G = 6.67e-8;% cm^3/g s^2
+            rcr = 3*(H0*1e5/3e24)^2/(8*pi*G);% gr/cm^3 
+            Y = 0.248;
+            y = (Y/4)/(1-Y);
+            mH = 1.67e-24;% gr
+            dldz = c./SIM21Gets.getHz(zion)./(1+zion)*3e24;%cm
+            ne = Ob*(1-Y)*(1+y)*(rcr/mH)*(1+zion).^3;%nb./(3e24)^3.*(1+zc2).^3.*(1-xHImatR(indp,:));% 
+
+            xHImat = SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID);
+            xHImat = [zeros(1,60),xHImat(2,:)];
+            tauCMB = sum((1-xHImat(1:151)).*ne(1:151).*sigmaT.*dldz(1:151))*0.1+sum((1-xHImat(152:156)).*ne(152:156).*sigmaT.*dldz(152:156))*1;
         end
         
         
