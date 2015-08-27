@@ -23,7 +23,8 @@
 % Cubes of LyA, Xrays, LW, ionizing radiative backgrounds, T21cm, Tgas, xe
 % and neutral fraction at each redshift are saved to memory
 
-function RunBackgroundsParam(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayParam,MyPop,FSfunc,photoheatingVersion,varargin) 
+function RunBackgroundsParam(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayParam,MyPop,FSfunc,photoheatingVersion,varargin)
+    addpath('/a/home/cc/tree/taucc/students/physics/matanlotem/Work/SIM21/lib/');
     tic;
     % MyCube = 0;
     % MyStar = 0.05;

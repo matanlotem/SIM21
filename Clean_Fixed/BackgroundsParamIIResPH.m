@@ -6,7 +6,7 @@ function xHImean = BackgroundsParamIIResPH(zcenter,ncube,fstar,flag,flagM,XeffTe
     global delta_cube
     N=length(delta_cube);
 
-    load(SIM21Utils.matrixPath('Planck_parameters'));
+    load(SIM21Utils.getMatrixPath('Planck_parameters'));
     %Lpix=3;
     zMAX2 = 50;% 60
     Threshold = 1/zeta;

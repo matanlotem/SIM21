@@ -2,7 +2,7 @@
 function xHImean = BackgroundsParamIIRes(zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Reion,zeta,feedback,p,pop,FSfunc,photoheatingOn,photoheatingVersion)
     global pathname_Data2
     global pathname_Data1
-    load(SIM21Utils.matrixPath('Planck_parameters'));
+    load(SIM21Utils.getMatrixPath('Planck_parameters'));
     %Lpix=3;
     zMAX2 = 50;% 60
     Threshold = 1/zeta;

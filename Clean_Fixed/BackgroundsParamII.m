@@ -8,7 +8,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
     global pathname_Data2
     global ID
     %Reion = 0.075
-    load(SIM21Utils.matrixPath('Planck_parameters'));
+    load(SIM21Utils.getMatrixPath('Planck_parameters'));
     %count = 0
     %Lpix=3;
     zMAX2 = 60;% start to calculate all radiative backgrounds and 21-cm
@@ -27,12 +27,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
 
     if(zcenter>zMAX2)
         JLW21=1e-10*ones(N,N,N);
-        %save(strcat(pathname_Data1,'JLW_',num2str(zcenter),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-        %                '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'JLW21');
-        save(strcat(pathname_Data1,'JLW_',num2str(zcenter),'_',num2str(ncube),ID,'.mat'),'JLW21');
-      
-      
+        save([pathname_Data1,'JLW_',num2str(zcenter),ID,'.mat'],'JLW21');
     else       
 
         %-----reionization parameters----------%
@@ -73,8 +68,6 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
             %%%%       LWCoefMat, LyACoefMat,
             %%%%       LionCoefMat, XCoefMat, <zeros> LyAXCoefMat
            
-            %load('XCoefMatNEW_xHI0212.mat');%Q
-            %load('LionCoefMatNEW_xHI0212.mat');%Q
             XCoefMatNew = SIM21Utils.importMatrix('XCoefMatNEW_xHI0212');
             LionCoefMatNew = SIM21Utils.importMatrix('LionCoefMatNEW_xHI0212');
             XCoefMatMQ=XCoefMatNew/5*(MQzeta)^(5/6);%Q
@@ -83,29 +76,15 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
             LionCoefMatNew=[];%Q
             
             if(pop==2)
-                %load('LWCoefMatII.mat')
-                %LWCoefMat = LWCoefMatII;
-                %LWCoefMatII = []; 
-                %load('LyACoefMatII.mat')
-                %LyACoefMat = LyACoefMatII;
-                %LyACoefMatII = [];
                 LWCoefMat = SIM21Utils.importMatrix('LWCoefMatII');
                 LyACoefMat = SIM21Utils.importMatrix('LyACoefMatII');
             else
-                %load('LWCoefMatIII.mat')
-                %LWCoefMat = LWCoefMatIII;
-                %LWCoefMatIII = []; 
-                %load('LyACoefMatIII.mat')
-                %LyACoefMat = LyACoefMatIII;
-                %LyACoefMatIII = []; 
                 LWCoefMat = SIM21Utils.importMatrix('LWCoefMatIII');
                 LyACoefMat = SIM21Utils.importMatrix('LyACoefMatIII');
             end
            
             if(IspecNew == 2)
                 %----------------old power law SED--------------------------%
-                %load('LionCoefMat_xHI0212.mat');
-                %load('XCoefMat_xHI0212.mat');
                 LionCoefMat = SIM21Utils.importMatrix('LionCoefMat_xHI0212');
                 XCoefMat = SIM21Utils.importMatrix('XCoefMat_xHI0212');
             else
@@ -207,10 +186,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                 % load the LW to calculate the feedback
                 for jj=1:2    
                     
-                    %load(strcat(pathname_Data1,'JLW_',num2str(zint(jj)),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-                    %    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-                    %    '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'));% total LyA flux
-                    load(strcat(pathname_Data1,'JLW_',num2str(zint(jj)),ID,'.mat'));% total LyA flux
+                    load([pathname_Data1,'JLW_',num2str(zint(jj)),ID,'.mat']);% total LyA flux
                     J_interp(jj,:,:,:) = JLW21; 
                     JLW21 = [];
                 end      
@@ -250,10 +226,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                     xHI_matrixTemp(ii,:,:,:) = fftn(ones(N,N,N));
                     %Neut_matrix(ii,:,:,:) =fftn( ones(N,N,N));
                 else
-                    %load(strcat(pathname_Data2,'xHI_',num2str(zii),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-                    %    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),'_',...
-                    %    num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'));% total LyA flux
-                    load(strcat(pathname_Data2,'xHI_',num2str(zii),ID,'.mat'));% total LyA flux
+                    load([pathname_Data2,'xHI_',num2str(zii),ID,'.mat']);% total LyA flux
                     xHI_matrixTemp(ii,:,:,:) =fftn(max(0,min(1,xHI)));%xe at each pixel at zii
                     xHI = [];
                 end
@@ -279,15 +252,11 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         JLW21=zeros(N,N,N);
 %% TIMING 83s
         for ii= 1:Nshells  %integral
-       
             R=Lpix*(Rmin(ii)+Rmax(ii))/2; % comoving radius of ring
-            tic;
             zshell = SIM21Gets.getRtoz(R,zcenter);
-            toc;
             if(zshell<ceil(zsM)&(zshell>zcenter))
                 izs = find(z>zshell,1,'first');
                 i_interp=0;
-                tic;
                 for iz=izs-1:izs
                     i_interp=i_interp+1;
                     indZ=find(Ind==find(z==z(iz)));
@@ -300,10 +269,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                         xe =  (1.716e-11*z(iz).^3-3.823e-9*z(iz).^2+4.941e-7*z(iz)+0.0001056).*ones(N,N,N);
                         xe_matrix(:,:,:) =fftn(xe);
                     else
-                        %load(strcat(pathname_Data1,'xe_',num2str(z(iz)),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-                        %        '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-                        %        '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'));% total LyA flux
-                        load(strcat(pathname_Data1,'xe_',num2str(z(iz)),ID,'.mat'));% total LyA flux
+                        load([pathname_Data1,'xe_',num2str(z(iz)),ID,'.mat']);% total LyA flux
                         xe_matrix(:,:,:) = fftn(xe);%xe at each pixel at zii
                         xe = [];
                     end
@@ -316,10 +282,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                             xHI_matrix(:,:,:) = fftn(ones(N,N,N));
                             %Neut_matrix(ii,:,:,:) =fftn( ones(N,N,N));
                         else
-                            %load(strcat(pathname_Data2,'xHI_',num2str(z(iz)),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-                            %    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),'_',...
-                            %    num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'));% total LyA flux
-                            load(strcat(pathname_Data2,'xHI_',num2str(z(iz)),ID,'.mat'));% total LyA flux
+                            load([pathname_Data2,'xHI_',num2str(z(iz)),ID,'.mat']);% total LyA flux
                             xHI_matrix(:,:,:) =fftn(max(0,min(1,xHI)));%xe at each pixel at zii
                             xHI = [];
                         end
@@ -333,8 +296,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                     xHI_interp(i_interp,:,:,:) = LWgetGasShell2(squeeze(xHI_matrix(:,:,:)),0,Rmax(ii))./(4*pi*Rmax(ii)^3/3); 
                 
                 end
-                toc;
-                tic;
+                
                 aa=1;
                 xeshell =min(max(xe_grid),max(min(xe_grid),squeeze(interp1(log(1+z(izs-1:izs)),xe_interp,log(1+zshell)))));
                 %mean(mean(mean(xeshell)))
@@ -379,7 +341,6 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                 end
                 dfdt = [];  
                 fcoll = []; 
-                toc;
             end
         end
 %% END TIMING
@@ -398,23 +359,10 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         Jalpha = JA;%+JAX;
         JLW21=JLW21./10^(-21);
        
-        %save(strcat(pathname_Data1,'Lion_',num2str(zcenter),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),'_',...
-        %                   num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'Lion');
-        %save(strcat(pathname_Data1,'eps_',num2str(zcenter),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-        %                    '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'eps');
-        %save(strcat(pathname_Data1,'Jalpha_',num2str(zcenter),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-        %                    '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'Jalpha');
-        %save(strcat(pathname_Data1,'JLW_',num2str(zcenter),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                     '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),'_',...
-        %                     num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'JLW21');
-        
-        save(strcat(pathname_Data1,'Lion_',num2str(zcenter),ID,'.mat'),'Lion');
-        save(strcat(pathname_Data1,'eps_',num2str(zcenter),ID,'.mat'),'eps');
-        save(strcat(pathname_Data1,'Jalpha_',num2str(zcenter),ID,'.mat'),'Jalpha');
-        save(strcat(pathname_Data1,'JLW_',num2str(zcenter),ID,'.mat'),'JLW21');
+        save([pathname_Data1,'Lion_',num2str(zcenter),ID,'.mat'],'Lion');
+        save([pathname_Data1,'eps_',num2str(zcenter),ID,'.mat'],'eps');
+        save([pathname_Data1,'Jalpha_',num2str(zcenter),ID,'.mat'],'Jalpha');
+        save([pathname_Data1,'JLW_',num2str(zcenter),ID,'.mat'],'JLW21');
 
                     
         Jalpha = [];
@@ -431,10 +379,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
             zfeed = (ceil(z0)-1:ceil(z0));
             % load the LW to calculate the feedback
             for jj=1:2    
-                %load(strcat(pathname_Data1,'JLW_',num2str(zfeed(jj)),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-                %                    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-                %                    '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'));% total LyA flux
-                load(strcat(pathname_Data1,'JLW_',num2str(zfeed(jj)),ID,'.mat'));% total LyA flux
+                load([pathname_Data1,'JLW_',num2str(zfeed(jj)),ID,'.mat']);% total LyA flux
                 J_interp(jj,:,:,:) = JLW21; 
                 JLW21 = [];
             end      
@@ -448,10 +393,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         if zcenter<40 && photoheatingVersion==2
         zs=[6:0.1:15 16:40];
         q=find(round(zs*10)/10==round(zcenter*10)/10);
-        load(strcat(pathname_Data2,'xHI_',num2str(zs(q+1)),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-                            '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),'_',...
-                            num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'xHI');
-        load(strcat(pathname_Data2,'xHI_',num2str(zs(q+1)),ID,'.mat'),'xHI');
+        load([pathname_Data2,'xHI_',num2str(zs(q+1)),ID,'.mat'],'xHI');
         PrevNeut=logical(xHI>0);
         end 
        
@@ -461,30 +403,14 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         Neut = (Maxfcoll<Threshold);% 1 if neutral, 0 if fully ionized
         xHI = max(0, (1-zeta*fgas).*Neut.*PrevNeut);% neutral fraction of each pixel (as in 21cmFAST)
 
-        %save(strcat(pathname_Data2,'xHI_',num2str(zcenter),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-        %                    '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'xHI');
-        %
-        %save(strcat(pathname_Data2,'Neut_',num2str(zcenter),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-        %                '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'Neut');
-        
-        save(strcat(pathname_Data2,'xHI_',num2str(zcenter),ID,'.mat'),'xHI');
-        save(strcat(pathname_Data2,'Neut_',num2str(zcenter),ID,'.mat'),'Neut');
+        save([pathname_Data2,'xHI_',num2str(zcenter),ID,'.mat'],'xHI');
+        save([pathname_Data2,'Neut_',num2str(zcenter),ID,'.mat'],'Neut');
         
               
     % ------------- find Tspin and 21-cm ------------------%    
     %------------------------------
-        %load(strcat(pathname_Data1,'xe_',num2str(zcenter),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-        %                    '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'));
-        %
-        %load(strcat(pathname_Data2,'TK_',num2str(zcenter),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-        %                    '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'));
-        
-        load(strcat(pathname_Data1,'xe_',num2str(zcenter),ID,'.mat'));
-        load(strcat(pathname_Data2,'TK_',num2str(zcenter),ID,'.mat'));
+        load([pathname_Data1,'xe_',num2str(zcenter),ID,'.mat']);
+        load([pathname_Data2,'TK_',num2str(zcenter),ID,'.mat']);
     % count = 2  
 
                 %save('test6z.mat','zMAX2');
@@ -492,10 +418,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         Ts(Ts==0)=1e-20;   
         deltaTerm = (ones(size(delta_cube))+max(-0.9,min(1,delta_cube*LWgetDz(zcenter)/LWgetDz(40))));
         T21cm = C21*sqrt((1+zcenter)/10).*deltaTerm.*(1-2.725*(1+zcenter)./Ts).*xHI;
-        %save(strcat(pathname_Data2,'T21cm_',num2str(zcenter),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-        %                    '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'T21cm');
-        save(strcat(pathname_Data2,'T21cm_',num2str(zcenter),ID,'.mat'),'T21cm');
+        save([pathname_Data2,'T21cm_',num2str(zcenter),ID,'.mat'],'T21cm');
 
         T21cm=[];
         Ts=[];
@@ -541,15 +464,8 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                 Lion_extrap(indz,:,:,:)=zeros(N,N,N);
                 eps_extrap(indz,:,:,:)=zeros(N,N,N);
             else
-                %load(strcat(pathname_Data1,'Lion_',num2str(zi(indz)),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-                %            '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-                %            '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'Lion');
-                %load(strcat(pathname_Data1,'eps_',num2str(zi(indz)),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-                %            '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-                %            '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'eps');
-                
-                load(strcat(pathname_Data1,'Lion_',num2str(zi(indz)),ID,'.mat'),'Lion');
-                load(strcat(pathname_Data1,'eps_',num2str(zi(indz)),ID,'.mat'),'eps');
+                load([pathname_Data1,'Lion_',num2str(zi(indz)),ID,'.mat'],'Lion');
+                load([pathname_Data1,'eps_',num2str(zi(indz)),ID,'.mat'],'eps');
 
                 Lion_extrap(indz,:,:,:) = Lion;% df/dt in [sec^-1] units 
                 eps_extrap(indz,:,:,:) = eps;% df/dt in [sec^-1] units    
@@ -566,18 +482,10 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
 
         xe = exp(A2)-1;
         TK = exp(B2);
-        %save(strcat(pathname_Data1,'xe_',num2str(zcenter-1),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-        %                    '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'xe');
-        %save(strcat(pathname_Data2,'TK_',num2str(zcenter-1),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-        %                    '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'TK');
         
-        save(strcat(pathname_Data1,'xe_',num2str(zcenter-1),ID,'.mat'),'xe');
-        save(strcat(pathname_Data2,'TK_',num2str(zcenter-1),ID,'.mat'),'TK');
-
+        save([pathname_Data1,'xe_',num2str(zcenter-1),ID,'.mat'],'xe');
+        save([pathname_Data2,'TK_',num2str(zcenter-1),ID,'.mat'],'TK');
     %
-
 
       %  count = 4                  
         TK = [];
