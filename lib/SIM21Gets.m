@@ -3,7 +3,7 @@ classdef SIM21Gets
         function Hz = getHz(z)
             % Hubble constant
             % in km/s/Mpc
-            load(SIM21Utils.matrixPath('Planck_parameters'));
+            load(SIM21Utils.getMatrixPath('Planck_parameters'));
             Hz = H0*sqrt(Om*(1+z).^3+OLambda+8.5522e-05*(1+z).^4); 
         end
         
@@ -22,7 +22,7 @@ classdef SIM21Gets
             global pathname_Data1
             global ID
             
-            load(SIM21Utils.matrixPath('Planck_parameters'));
+            load(SIM21Utils.getMatrixPath('Planck_parameters'));
             
             N=length(delta_cube);
             
@@ -56,7 +56,7 @@ classdef SIM21Gets
         
         function nH = getnH(z)
             % hydrogen proper number density
-            load(SIM21Utils.matrixPath('Planck_parameters'));
+            load(SIM21Utils.getMatrixPath('Planck_parameters'));
             Y = 0.247; % Helium abundance by mass
             nH=(rhoc/mp)*(1-Y)*Ob*(1+z).^3; % 1/Mpc^3
         end
@@ -68,7 +68,7 @@ classdef SIM21Gets
         
         
         function tGP = getTauGPn(z) 
-            load(SIM21Utils.matrixPath('Planck_parameters'));
+            load(SIM21Utils.getMatrixPath('Planck_parameters'));
             gamma = 50*10^6; % 1/s
             nH = SIM21Gets.getnH(z);% 1/Mpc^3
             tGP=(3*nH*(lambda_a)^3*gamma)./(2*SIM21Gets.getHz(z)*3.241e-20);
@@ -97,7 +97,7 @@ classdef SIM21Gets
             %  Reion=0.075;
             %  feedback=0;
             %  p=0;
-            load(SIM21Utils.matrixPath('Planck_parameters'));
+            load(SIM21Utils.getMatrixPath('Planck_parameters'));
             
             S_alpha2=SIM21Gets.getSalpha(TK,z0);
             JA_alpha = SIM21Gets.getLyA(TK,z0,ncube,fstar,flag,flagM,XeffTerm,Ispec,Reion,feedback,p,pop,FSfunc,photoheatingVersion);
@@ -108,7 +108,7 @@ classdef SIM21Gets
         function Xc = getXc(TK,z0)
             % collisional coupling coefficient
             global delta_cube
-            load(SIM21Utils.matrixPath('Planck_parameters'));
+            load(SIM21Utils.getMatrixPath('Planck_parameters'));
             
             nH = (ones(size(delta_cube))+max(-1,min(1,delta_cube))).*SIM21Gets.getnH(z0)/(3.1e24)^3;% 1/cm^3
             kappa = SIM21Gets.getKappa(TK);%cm^3/s
@@ -116,6 +116,63 @@ classdef SIM21Gets
             Tstar = 0.068; %K
             Xc = (nH.*kappa/A10)*(Tstar/Tcmb);
         end
+        
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
+        function f = getf(z,A,B,Lion)   
+            global delta_cube
+            load(SIM21Utils.getMatrixPath('Planck_parameters'));
+            
+            dtdz = -3.09e19./(SIM21Gets.getHz(z).*(1+z)); % in seconds
+            fHe = 1-0.921;
+            fHI = 0.921;
+            nb0 = 2.1e-7*(1+fHe/fHI);
+            alphaA=4.2e-13*(exp(B)/10^4).^(-0.76);
+            f = (1+z).*dtdz*Lion./exp(A)-(1+z)^4.*dtdz.*fHI*nb0.*alphaA.*((exp(A)-1).^2./exp(A)).*(1+delta_cube*LWgetDz(z)/D40);
+        end
+        
+        
+        function g = getg(z,A,B,Lion,eps)
+            fHe=6/(6+76);
+            kb = (1.38e-16/1.6e-12); % eV/K
+            dtdz =-3.09e19./(SIM21Gets.getHz(z).*(1+z)); % in seconds
+            g = 2-SIM21Gets.getf(z,A,B,Lion)+(2/3/kb)*(1+z).*dtdz*eps./(exp(B).*exp(A))+((exp(A)-1)./(exp(A)+fHe)).*8.55e-13.*(2.725*(1+z)-exp(B)).*(1+z).^5./(exp(B));
+        end
+        
+        
+        function Rc = getHorizon(zcenter)
+            load(SIM21Utils.getMatrixPath('Planck_parameters'));
+            F = @(x)c./(H0*sqrt(Om*(1+x).^3+OLambda));
+            Rc = quadl(F,zcenter,1e10);
+        end
+        
+        
+        function zs = getRtoz(R,z)
+            % output: z+dz
+
+            H0=67.04;
+            c=3e5;
+            omm=.3169;
+            k = 2*c/(H0*sqrt(omm));
+            Rcrit = k./sqrt(1+z);
+            
+            if (R<SIM21Gets.getHorizon(z))
+                zs = (k^2*z + 2*k*R*sqrt(1+z) - R.^2.*(1+z))./(k^2 - 2*k*R*sqrt(1+z) + R.^2*(1+z));
+            else 
+                zs = 1e15;
+            end
+        end
+        
+        
+        function [ zmax ] = getzmax( zc,n )
+            zmax=((1+zc)*((1-(n+1)^-2)/(1-n^-2)))-1;
+        end
+        
+        
+        function t = getztot(z)
+            t = ((1+z)/7).^(-3/2)*.95e9;
+        end
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         
         function Tcmb = getTcmb(z)

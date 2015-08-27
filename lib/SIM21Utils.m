@@ -1,12 +1,17 @@
 classdef SIM21Utils
+    properties(Constant)
+        libPath = '/a/home/cc/tree/taucc/students/physics/matanlotem/Work/SIM21/lib/';
+        matrixPath = [SIM21Utils.libPath,'Matrices/'];
+    end
+    
     methods(Static)
         function M = importMatrix(MName)
-            M = importdata(SIM21Utils.matrixPath(MName));
+            M = importdata(SIM21Utils.getMatrixPath(MName));
         end
         
         
-        function Mpath = matrixPath(MName)
-            Mpath=['Matrices/',MName,'.mat'];
+        function Mpath = getMatrixPath(MName)
+            Mpath=[SIM21Utils.matrixPath,MName,'.mat'];
         end
         
         

@@ -145,7 +145,7 @@ classdef SIM21PwSp
             global pathname_Data2
             global ID
             global delta_cube
-            load(SIM21Utils.matrixPath('Planck_parameters'));
+            load(SIM21Utils.getMatrixPath('Planck_parameters'));
             
             del = real(max(-0.9,min(1,delta_cube*LWgetDz(zii)/LWgetDz(40))));
             
