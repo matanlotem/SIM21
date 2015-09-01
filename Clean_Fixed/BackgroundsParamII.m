@@ -412,7 +412,6 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         load([pathname_Data1,'xe_',num2str(zcenter),ID,'.mat']);
         load([pathname_Data2,'TK_',num2str(zcenter),ID,'.mat']);
     % count = 2  
-
                 %save('test6z.mat','zMAX2');
         Ts = SIM21Gets.getTs(TK, zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Reion,feedback,p,pop,FSfunc,photoheatingVersion);
         Ts(Ts==0)=1e-20;   

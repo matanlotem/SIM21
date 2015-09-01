@@ -10,7 +10,8 @@ import datetime
 def sendJob(queName,codePath,outputPath,outputName,matlabCmd,otherArgs=''):
     dt=str(datetime.datetime.now()).replace(' ','_').replace(':','-')[:19]
     outputFile=outputPath + outputName + '_' + dt
-    qCmd = 'qsub -q ' + queName + ' -N ' + outputName[:15] + ' -e ' + outputPath + ' -o ' + outputPath + ' ' + otherArgs +\
+    #qCmd = 'qsub -q ' + queName + ' -N ' + outputName[:15] + ' -e ' + outputPath + ' -o ' + outputPath + ' ' + otherArgs +\
+    qCmd = 'qsub -q ' + queName + ' -N ' + outputName[:15] + ' -e /dev/null -o /dev/null ' + otherArgs +\
            ' << JOBC\n' +\
            'matlab -nodisplay -nosplash -nodesktop -nojvm > ' + outputFile + ' << MATLAB\n' + \
            '    try\n' +\
@@ -42,12 +43,19 @@ def getID(paramCases,caseNum):
 def getMatlab(paramCases,caseNum):
     return 'RunBackgroundsParam(' + ','.join([str(val) for val in paramCases[caseNum]]) + ');'
 
-def sendCasesJobs(paramCases,caseList):
+def getTestMatlab(pathExt,paramCases,caseNum):
+    return 'RunBackgroundsParam2(\'' + pathExt + '\',' + ','.join([str(val) for val in paramCases[caseNum]]) + ');'
+
+def sendCasesJobs(codePath,outputPath,paramCases,caseList,testName=''):
     otherArgs = '-l pmem=10gb,pvmem=15gb,nodes=compute-0-66:ppn=1'
     for caseNum in caseList:
-        outputName = 'ParamStudy_' + str(caseNum) + '_' + getID(paramCases,caseNum)
-        matlabCmd = getMatlab(paramCases,caseNum)
-        sendJob(queName,codePath,outputPath,outputName,matlabCmd,otherArgs)
+        if not testName:
+            outputName = 'ParamStudy_' + str(caseNum) + '_' + getID(paramCases,caseNum)
+            matlabCmd = getMatlab(paramCases,caseNum)
+        else:
+            outputName = testName + '_Case_' + str(caseNum) + '_' + getID(paramCases,caseNum)
+            matlabCmd = getTestMatlab(testName,paramCases,caseNum)
+        sendJob(queName,codePath,outputPath,outputName,matlabCmd,otherArgs) 
 
 def removeData(paramCases,caseList,dataFolders):
     """
@@ -83,10 +91,12 @@ def runOnNode(node,cmd):
     os.system(bash)
 
 queName = 'barkana'
-codePath = r'/a/home/cc/tree/taucc/students/physics/matanlotem/Work/CODE/Clean/'
-outputPath = r'/a/home/cc/tree/taucc/students/physics/matanlotem/Work/Logs/'
-#paramDataPath = r'/a/home/cc/tree/taucc/students/physics/matanlotem/Work/ParamStudy/ParamStudy.txt'
-paramDataPath = r'/a/home/cc/tree/taucc/students/physics/matanlotem/Work/SIM21/ParamStudy/ParamStudy.txt'
+workPath = r'/a/home/cc/tree/taucc/students/physics/matanlotem/Work/'
+codePath = workPath + r'SIM21/Clean/'
+testCodePath  = workPath + r'SIM21/Clean_Fixed/'
+outputPath = workPath + r'Logs/'
+testOutputPath = outputPath + r'Test/'
+paramDataPath = workPath + r'SIM21/ParamStudy/ParamStudy.txt'
 #paramDataPath = r'C:\Users\Matan\Work\ParamStudy\ParamStudy.txt'
 
 dataFolders = [['/scratch300/matanlotem/Data/',[]],
@@ -96,4 +106,6 @@ dataFolders = [['/scratch300/matanlotem/Data/',[]],
 
 paramCases = getCases(paramDataPath)
 #removeData(paramCases,range(1,24),dataFolders)
-sendCasesJobs(paramCases,[1])
+#sendCasesJobs(paramCases,[50,51])
+#sendCasesJobs(testCodePath,testOutputPath,paramCases,[1],'Test1')
+sendCasesJobs(codePath,outputPath,paramCases,[1])

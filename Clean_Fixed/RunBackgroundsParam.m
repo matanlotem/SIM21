@@ -54,12 +54,11 @@ function RunBackgroundsParam(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,De
     pathname_DataBackgrounds = '/scratch300/matanlotem/DataBackgrounds_withPlanck/';
     
     global ID
-    ID = SIM21Utils.getID(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayParam,MyPop,FSfunc,photoheatingVersion);
 
     photoheatingOn = 0;
 
     for icube =1:length(MyCube)
-       ncube = MyCube(icube)
+        ncube = MyCube(icube)
         delta_main=importdata(strcat(pathname_DataBackgrounds,'my',num2str(ncube),'_d.dat'));
         vbc_main=importdata(strcat(pathname_DataBackgrounds,'my',num2str(ncube),'_v.dat'));
         
@@ -68,8 +67,8 @@ function RunBackgroundsParam(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,De
         vbc_cube = vbc_main;
         delta = delta_main;
         if photoheatingVersion==1 || photoheatingVersion==2
-                                    photoheatingOn = 1;
-                                    end
+            photoheatingOn = 1;
+        end
         
     %--------------------Simulation------------------------------%
         z = (6:1:120);
@@ -77,7 +76,7 @@ function RunBackgroundsParam(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,De
             Tau = MyTau(indt)
             for indp = 1:length(MyPop)
                 pop = MyPop(indp)
-            for indv = 1:length(MyVBC)
+                for indv = 1:length(MyVBC)
                     flag = MyVBC(indv);
                     for indM = 1:length(MyVc)
                         flagM = MyVc(indM);
@@ -95,12 +94,12 @@ function RunBackgroundsParam(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,De
                                     %--------preliminary LW (for zeta) -----------------------------
                                     if (feedback == 1)
                                         zMAX = 118;
-                                        i=0;
-    %                                     while(z(find(z==zMAX)-i+1)>6)
-    %                                          zcenter = z(find(z==zMAX)-i)
-    %                                          getLW(zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,feedback,p,pop,FSfunc,photoheatingOn,photoheatingVersion);   
-    %                                          i=i+1;
-    %                                     end
+    %                                    i=0;
+    %                                    while(z(find(z==zMAX)-i+1)>6)
+    %                                        zcenter = z(find(z==zMAX)-i)
+    %                                        getLW(zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,feedback,p,pop,FSfunc,photoheatingOn,photoheatingVersion);   
+    %                                        i=i+1;
+    %                                    end
                                     else
                                         zMAX = 66;
                                     end
@@ -112,7 +111,7 @@ function RunBackgroundsParam(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,De
         
                                     %delta_Z=importdata(strcat('/scratch/prun/P_DATA/my',num2str(Zcube),'_d.dat'));
                                     %vbc_Z=importdata(strcat('/scratch/prun/P_DATA/my',num2str(Zcube),'_v.dat'));
-                                    delta_cube =delta_Z;  
+                                    delta_cube = delta_Z;  
                                     vbc_cube = vbc_Z;
                                         %zeta = getZeta2(Zcube,Tau,flag,flagM,fstar,feedback,p,pop)
                                     if isempty(cell2mat(varargin))
@@ -123,61 +122,56 @@ function RunBackgroundsParam(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,De
 
                                     
                                     %------------LyA, Xrays, T21, Tk, LW ... -----------------------------
-                                    delta_cube =delta_main;  
+                                    delta_cube = delta_main;  
                                     vbc_cube = vbc_main;
                                     
-                                    gridInterpKey = ['_' num2str(ncube)...
-                                         '_' num2str(fstar) '_' num2str(flag) '_' num2str(flagM)...
-                                         '_' num2str(XeffTerm) '_' num2str(Ispec) '_' num2str(Tau)...
-                                         '_' num2str(feedback) '_' num2str(p) '_' num2str(pop) '_' num2str(FSfunc) '_' num2str(photoheatingVersion) '.mat'];
+                                    ID = SIM21Utils.getID(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayParam,MyPop,FSfunc,photoheatingVersion);
+                                    gridInterpKey = [ID,'.mat'];
                                     
-                                                                   
                                     i=0;
                                     if photoheatingOn==0
-                                     while(z(find(z==zMAX)-i+1)>6)
-                                         zcenter = z(find(z==zMAX)-i)
-                                         BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p,pop,FSfunc,photoheatingOn,photoheatingVersion); 
-                                         %BackgroundsPix(zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p);         
-                                         i=i+1;
-                                     end
-                                    %high resolution for reionization 
-                                    zION = 6:0.1:15;
-                                    for indz=1:length(zION)
-                                        zi = zION(indz)
-                                        xHImean = BackgroundsParamIIRes(zi,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p,pop,FSfunc,photoheatingOn,photoheatingVersion); 
-                                        %xHImean = BackgroundsPixRes(zi,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p);
-                                    end
-                                    %-------------------------------------
+                                        while(z(find(z==zMAX)-i+1)>6)
+                                            zcenter = z(find(z==zMAX)-i)
+                                            BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p,pop,FSfunc,photoheatingOn,photoheatingVersion); 
+                                            %BackgroundsPix(zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p);         
+                                            i=i+1;
+                                        end
+                                        %high resolution for reionization 
+                                        zION = 6:0.1:15;
+                                        for indz=1:length(zION)
+                                            zi = zION(indz)
+                                            xHImean = BackgroundsParamIIRes(zi,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p,pop,FSfunc,photoheatingOn,photoheatingVersion); 
+                                            %xHImean = BackgroundsPixRes(zi,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p);
+                                        end
+                                        %-------------------------------------
                                     end
                                     
                                     if photoheatingOn==1
-                                    while(z(find(z==zMAX)-i+1)>6)
-                                         zcenter = z(find(z==zMAX)-i)
-                                         BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p,pop,FSfunc,photoheatingOn,photoheatingVersion); 
-                                         %BackgroundsPix(zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p);         
+                                        while(z(find(z==zMAX)-i+1)>6)
+                                            zcenter = z(find(z==zMAX)-i)
+                                            BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p,pop,FSfunc,photoheatingOn,photoheatingVersion); 
                                             if zcenter<16 && zcenter>6
-                                            for k=1:9
-                                             zres=zcenter-0.1*k
-                                             xHImean = BackgroundsParamIIResPH(zres,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p,pop,FSfunc,photoheatingOn,photoheatingVersion); 
-                                             clear grid_interpSF2;
+                                                for k=1:9
+                                                    zres=zcenter-0.1*k
+                                                    xHImean = BackgroundsParamIIResPH(zres,ncube,fstar,flag,flagM,XeffTerm,Ispec,Tau,zeta,feedback,p,pop,FSfunc,photoheatingOn,photoheatingVersion); 
+                                                    clear grid_interpSF2;
+                                                end
                                             end
-                                            end
-                                         i=i+1;
-                                    end
+                                            i=i+1;
+                                        end
                                     end
                                      
                                 end
                             end
                         end
                     end
+                end
             end
-        end
         end
     end
     vbc_cube = [];
     delta_cube = [];
     JLW21 = [];
-
 
 
     % p = profile('info');
