@@ -67,7 +67,7 @@ classdef SIM21Analysis
             figSettings.title = ['T21cm(z)',add2Title];
             figSettings.xLabel = '1+z';
             figSettings.yLabel = 'T21cm [mK]';
-            figSettings.lines = {cat(1,SIM21Analysis.T21cmZ(2:end),zeros(length(SIM21Analysis.T21cmZ(2:end))))};
+            figSettings.lines = {cat(1,SIM21Analysis.T21cmZ(2:end),zeros(1,length(SIM21Analysis.T21cmZ(2:end))))};
             SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,0,runID,figSettings);
         end
         
@@ -128,26 +128,25 @@ classdef SIM21Analysis
         end
         
         
-        function plotByZ(dataPath,outputPath,z,magic,interpStep,runID,figSettings)
+        function plotByZ(dataPath,outputPath,z,Magic,interpStep,runID,figSettings)
             % Plot different graphs as function of Z
             
-            SIM21Analysis.message(['=== STARTING ',magic,' ===']);
-            dataMat = SIM21Analysis.getZData(dataPath,outputPath,z,magic,runID);
-            if ~interpStep
+            SIM21Analysis.message(['=== STARTING ',Magic,' ===']);
+            dataMat = SIM21Analysis.getZData(dataPath,outputPath,z,Magic,runID);
+            if interpStep == 0
                 XYData = dataMat;
             else
                 XYData = SIM21Analysis.interpData(dataMat,interpStep);
             end
             XYData(1,:) = XYData(1,:) + 1; % z+1
-            figName = [outputPath,magic,runID,'.png'];
+            figName = [outputPath,Magic,runID,'.png'];
             SIM21Analysis.plotData(outputPath,figName,XYData,figSettings);
         end
         
         
-        function dataMat=getZData(dataPath,outputPath,z,magic,runID)
+        function dataMat = getZData(dataPath,outputPath,z,Magic,runID)
             % Create or import mean data matrix
-            
-            dataName = [outputPath,magic,'_Data',runID,'.mat'];
+            dataName = [outputPath,Magic,'_Data',runID,'.mat'];
             
             % Check if output exists and load
             if exist(dataName, 'file') == 2
@@ -158,7 +157,13 @@ classdef SIM21Analysis
                 SIM21Analysis.message('calculating mean');
                 dataMat=cat(1,z,zeros(1,length(z)));
                 for i = 1:length(dataMat)
-                    dataMat(2,i)=mean(mean(mean(importdata(SIM21Analysis.genDataFileName(dataPath,magic,runID,dataMat(1,i))))));
+                    fileName = SIM21Analysis.genDataFileName(dataPath,Magic,runID,dataMat(1,i));
+                    if exist(fileName, 'file') == 2
+                        dataMat(2,i) = mean(mean(mean(importdata(fileName))));
+                    else % for half run simulations
+                        SIM21Analysis.errorMessage(['Error: Missing ',Magic,' z=',num2str(dataMat(1,i)),' file']);
+                        dataMat(2,i) = NaN;
+                    end
                     if mod(i,10) == 0
                         SIM21Analysis.message(['    ',num2str(i),' / ',num2str(length(dataMat))]);
                     end
@@ -182,7 +187,6 @@ classdef SIM21Analysis
         end
         
         
-        %function plotData(outputPath,outputName,XYData,figLog,figXLim,figYLim,figXTick,figYTick,figTitle,figXLabel,figYLabel)
         function plotData(outputPath,outputName,XYData,figSettings)
             % Plot data by XY coordinates
             SIM21Analysis.message('plotting');
@@ -270,7 +274,7 @@ classdef SIM21Analysis
             TKData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID),interpStep);
             T21cmData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,runID),interpStep);
             
-            % MIN / MAX
+            % MIN / MAX T21cm
             minT21cmInd = find(T21cmData(2,:)==min(T21cmData(2,:)));
             maxT21cmInd = find(T21cmData(2,:)==max(T21cmData(2,:)));
             specialParams.minT21cm.z = T21cmData(1,minT21cmInd);
@@ -289,9 +293,15 @@ classdef SIM21Analysis
             specialParams.maxSlope.T = T21cmData(2,maxSlopeInd);
             specialParams.maxSlope.slope = slope(maxSlopeInd);
             
+            % MIN TK
+            minTKInd = find(TKData(2,:)==min(TKData(2,:)));
+            specialParams.minTK.z = TKData(1,minTKInd);
+            specialParams.minTK.T = TKData(2,minTKInd);
+
             % X Crossing
             xCrossInd = find(diff(sign(T21cmData(2,:))));
             specialParams.xCross.z = T21cmData(1,xCrossInd);
+            specialParams.xCross.z1 = max(specialParams.xCross.z); % in case there are several zero crossings
             
             % xHI Percentage
             xHI75Ind = find(diff(sign(xHIData(2,:)-0.75)));
@@ -326,6 +336,7 @@ classdef SIM21Analysis
                           'Max T\n\tz = ',num2str(specialParams.maxT21cm.z),'\n\tT = ',num2str(specialParams.maxT21cm.T),'\n',... 
                           'Min Slope\n\tz = ',num2str(specialParams.minSlope.z),'\n\tT = ',num2str(specialParams.minSlope.T),'\n\tSlope = ',num2str(specialParams.minSlope.slope),'\n',... 
                           'Max Slope\n\tz = ',num2str(specialParams.maxSlope.z),'\n\tT = ',num2str(specialParams.maxSlope.T),'\n\tSlope = ',num2str(specialParams.maxSlope.slope),'\n',...
+                          'Min TK\n\tz = ',num2str(specialParams.minTK.z),'\n\tT = ',num2str(specialParams.minTK.T),'\n',...
                           '0 Crossing\n\tz = ',num2str(specialParams.xCross.z),'\n',...
                           'xHI Percentage\n\t75%% z = ',num2str(specialParams.xHI75.z),'\n\t50%% z = ',num2str(specialParams.xHI50.z),...
                                         '\n\t25%% z = ',num2str(specialParams.xHI25.z),'\n\t0%% z = ',num2str(specialParams.xHI0.z),'\n',...
@@ -443,18 +454,26 @@ classdef SIM21Analysis
         end
         
         
-        function dataFileName = genDataFileName(dataPath, magic, runID, z)
+        function dataFileName = genDataFileName(dataPath, Magic, runID, z)
             % Get raw data matrix file name
             if runID(1) ~= '_'
                 runID = ['_',runID];
             end
-            dataFileName = [dataPath,magic,'_',num2str(z),runID,'.mat'];
+            dataFileName = [dataPath,Magic,'_',num2str(z),runID,'.mat'];
         end
         
         
         function message(msg)
             % SIM21Analysis class output
             if false
+                disp(msg);
+            end
+        end
+        
+        
+        function errorMessage(msg)
+            % SIM21Analysis class output
+            if true
                 disp(msg);
             end
         end

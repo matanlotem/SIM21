@@ -1,6 +1,8 @@
 classdef FdebugNaNs
     methods(Static)
-        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Running Stuff Tools
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function runSimulation_Old(c)
             disp('==Running Full Simulation==');
             
@@ -113,6 +115,21 @@ classdef FdebugNaNs
                     msg = [msg,'0'];
                 end
                 disp(sprintf([Magic,'\t',msg,'\t',a1((length(dataPath)+1):end)]));
+            end
+        end
+        
+        
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Analayzing Stuff Tools
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        function M = loadMat(Magic,zs,dataPath,c)
+            disp(['==Loading ',Magic,'==']);
+            M = zeros(max(zs),128,128,128);
+            for z = zs
+                fileName = SIM21Analysis.genDataFileName(dataPath,Magic,c.ID,z);
+                if exist(fileName, 'file') == 2
+                    M(z,:,:,:) = importdata(fileName);
+                end
             end
         end
     end

@@ -3,9 +3,13 @@ classdef paramStudy < handle
         dataPath;
         tmpDataPath;
         outputPath;
+        regularCase;
+        smallVarCases;
+        largeVarCases;
         workCases;
         specialParams;
-        paramCases = struct();
+        tempParams;
+        paramCases;
     end
     
     
@@ -19,12 +23,17 @@ classdef paramStudy < handle
             obj.dataPath = '/scratch300/matanlotem/Data/';
             obj.tmpDataPath = '/scratch/matanlotem/Data/';
             obj.outputPath = '/scratch300/matanlotem/ParamStudy/';
-            obj.workCases = [1:33,52:65];
-            %obj.workCases = [1];
+            obj.regularCase = [1];
+            obj.smallVarCases = [2:33];
+            obj.largeVarCases = [52:65];
+            obj.largeVarCases = [52:65];
+            obj.workCases = [obj.regularCase,obj.smallVarCases,obj.largeVarCases];
+            %obj.workCases = [50,51];
             
             obj.paramCases = obj.getCases(paramDataPath,cubeNum);
             obj.specialParams = obj.getSpecialParams();
-            %obj.plotSomething2()
+            obj.tempParams = obj.getTempParams();
+            %obj.plotSomething3();
         end
 
 
@@ -79,7 +88,7 @@ classdef paramStudy < handle
         end
         
         
-        function specialParams = calcSpecialParams(obj)
+        function specialParams = recalcSpecialParams(obj)
             % Recalculate specialParams
             for caseNum = obj.workCases
                 disp(caseNum);
@@ -87,10 +96,19 @@ classdef paramStudy < handle
             end
         end
         
+
+        function tempParams = getTempParams(obj)
+            % Calculate tempParams
+            for caseNum = obj.workCases
+                tempParams(caseNum).minMaxSlope.zDiff = obj.specialParams(caseNum).maxSlope.z - obj.specialParams(caseNum).minSlope.z;
+                tempParams(caseNum).xHI75_25.zDiff = obj.specialParams(caseNum).xHI75.z - obj.specialParams(caseNum).xHI25.z;
+            end
+        end
         
+
         function specialParamsTable(obj)
-            headers = ['General\t\t'   ,'minT21cm\t\t' ,'maxT21cm\t\t' ,'minSlope\t\t\t'      ,'maxSlope\t\t\t'      ,'0 Crossing\t\t' ,'xHI percentage\t\t\t\t'       ,'THT\t\t'   ,'final xHI\t\t'        ,'tau\t\t'              ,'\n',...
-                       'Case\t','ID\t' ,'z\t','T\t'    ,'z\t','T\t'    ,'z\t','T\t','slope\t' ,'z\t','T\t','slope\t' ,'z\t','NOC\t'    ,'z75\t','z50\t','z25\t','z0\t' ,'z\t','T\t' ,'planned\t','actual\t' ,'planned\t','actual\t' ,'\n'];
+            headers = ['General\t\t'   ,'minT21cm\t\t' ,'maxT21cm\t\t' ,'minSlope\t\t\t'      ,'maxSlope\t\t\t'      ,'minTK\t\t' ,'0 Crossing\t\t' ,'xHI percentage\t\t\t\t'       ,'THT\t\t'   ,'final xHI\t\t'        ,'tau\t\t'              ,'\n',...
+                       'Case\t','ID\t' ,'z\t','T\t'    ,'z\t','T\t'    ,'z\t','T\t','slope\t' ,'z\t','T\t','slope\t' ,'z\t','T\t' ,'z\t','NOC\t'    ,'z75\t','z50\t','z25\t','z0\t' ,'z\t','T\t' ,'planned\t','actual\t' ,'planned\t','actual\t' ,'\n'];
             tableStr = headers;
             
             function cellVal = formatCell(cellVal)
@@ -118,6 +136,8 @@ classdef paramStudy < handle
                           formatCell(obj.specialParams(caseNum).maxSlope.z)       ,'\t',...
                           formatCell(obj.specialParams(caseNum).maxSlope.T)       ,'\t',...
                           formatCell(obj.specialParams(caseNum).maxSlope.slope)   ,'\t',...
+                          formatCell(obj.specialParams(caseNum).minTK.z)          ,'\t',...
+                          formatCell(obj.specialParams(caseNum).minTK.T)          ,'\t',...
                           formatCell(obj.specialParams(caseNum).xCross.z)         ,'\t',...
                           formatCell(length(obj.specialParams(caseNum).xCross.z)) ,'\t',...
                           formatCell(obj.specialParams(caseNum).xHI75.z)          ,'\t',...
@@ -258,7 +278,185 @@ classdef paramStudy < handle
             saveas(f,outputName);
         end
         
+
+        function plotSomething3(obj)
+            outputPath = [obj.outputPath,'Graphs/'];
+            figSettings.xLabel = 'z';
+            figSettings.yLabel = 'T';
+            figSettings.title = 'Min T21cm - T(z)';
+            obj.plotSigScatter({'specialParams','minT21cm','z'},{'specialParams','minT21cm','T'},figSettings,[outputPath,'minT21cm.png']);
+            figSettings.title = 'Max T21cm - T(z)';
+            obj.plotSigScatter({'specialParams','maxT21cm','z'},{'specialParams','maxT21cm','T'},figSettings,[outputPath,'maxT21cm.png']);
+
+            figSettings.yLabel = 'Slope';
+            figSettings.title = 'Min Slope - slope(z)';
+            obj.plotSigScatter({'specialParams','minSlope','z'},{'specialParams','minSlope','slope'},figSettings,[outputPath,'minSlope.png']);
+            figSettings.title = 'Max Slope - slope(z)';
+            obj.plotSigScatter({'specialParams','maxSlope','z'},{'specialParams','maxSlope','slope'},figSettings,[outputPath,'maxSlope.png']);
+
+            figSettings.xLabel = 'z Min';
+            figSettings.yLabel = 'z Max';
+            figSettings.title = 'Max T - Min T - zMax(zMin)';
+            obj.plotSigScatter({'specialParams','minT21cm','z'},{'specialParams','maxT21cm','z'},figSettings,[outputPath,'minMaxT21cm.png']);
+            figSettings.title = 'Max Slope - Min Slope - zMax(zMin)';
+            obj.plotSigScatter({'specialParams','minSlope','z'},{'specialParams','maxSlope','z'},figSettings,[outputPath,'minMaxSlope.png']);    
+
+            figSettings.xLabel = 'zeta';
+            figSettings.yLabel = 'xHI50 z';
+            figSettings.title = 'xHI50 Z(zeta)';
+            obj.plotSigScatter({'paramCases','zeta'},{'specialParams','xHI50','z'},figSettings,[outputPath,'xHI50zeta.png']);    
+        end
+
+
+        function plotSomething4(obj)
+            outputPath = [obj.outputPath,'Graphs/'];
+
+            xfield = {'specialParams','minSlope','z'};
+            yfield = {'specialParams','maxSlope','z'};
+            figSettings.title = 'Max Slope - Min Slope - zMax(zMin)';
+            %figSettings.lines = [obj.getLines(xfield,yfield,{'paramCases','vc'})];
+            %figSettings.lines = [obj.getLines(xfield,yfield,{'paramCases','fx'})];
+            figSettings.lines = [obj.getLines(xfield,yfield,{'paramCases','fstar'})];
+            obj.plotSigScatter(xfield,yfield,figSettings,[outputPath,'minMaxSlope.png']);
+
+            figSettings.title = 'Max Slope - vc,fstarVals';
+            xfield = {'paramCases','vc'};
+            yfield = {'specialParams','maxSlope','z'};
+            figSettings.lines = [obj.getLines(xfield,yfield,{'paramCases','fstar'})];
+            obj.plotSigScatter(xfield,yfield,figSettings,[outputPath,'MaxSlope - vc,fstar.png']);
+
+            figSettings = struct();
+            xfield = {'paramCases','vc'};
+            yfield = {'tempParams','xHI75_25','zDiff'};
+            obj.plotSigScatter(xfield,yfield,figSettings,[outputPath,'xHI75-xHI25 - vc.png']);
+
+            figSettings = struct();
+            xfield = {'paramCases','fstar'};
+            yfield = {'specialParams','maxSlope','z'};
+            obj.plotSigScatter(xfield,yfield,figSettings,[outputPath,'maxSlope-fstar.png']);
+        end
+
+
+        function findCorr(obj,corrLevel)
+            corrParams = {{'specialParams','minT21cm','z'},{'specialParams','minT21cm','T'},...
+                          {'specialParams','maxT21cm','z'},{'specialParams','maxT21cm','T'},...
+                          {'specialParams','minSlope','z'},{'specialParams','minSlope','T'},{'specialParams','minSlope','slope'},...
+                          {'specialParams','maxSlope','z'},{'specialParams','maxSlope','T'},{'specialParams','maxSlope','slope'},...
+                          {'specialParams','minTK','z'},{'specialParams','minTK','T'},...
+                          {'specialParams','xCross','z1'},...
+                          {'specialParams','xHI75','z'},{'specialParams','xHI50','z'},{'specialParams','xHI25','z'},{'specialParams','xHI0','z'},...
+                          {'specialParams','THT','z'},{'specialParams','THT','T'},...
+                          {'paramCases','fstar'},{'paramCases','vbc'},{'paramCases','vc'},{'paramCases','fx'},{'paramCases','sed'},{'paramCases','atau'},...
+                          {'tempParams','minMaxSlope','zDiff'},{'tempParams','xHI75_25','zDiff'}};
+            for i = 1:length(corrParams)
+                corrVectors(:,i) = obj.getField(obj.workCases,corrParams{i})';
+            end
+
+            corrs = triu(corr(corrVectors),1);
+            indCorr = find(abs(corrs)>corrLevel);
+            [row,col] = ind2sub(size(corrs),indCorr);
+
+            outputPath = [obj.outputPath,'Graphs/findcorr',num2str(corrLevel),'_'];
+            for i = 1:length(row)
+                xfield = corrParams{row(i)};
+                yfield = corrParams{col(i)};
+                xLabel = strjoin(xfield(2:end),'.');
+                yLabel = strjoin(yfield(2:end),'.');
+                figSettings.xLabel = xLabel;
+                figSettings.yLabel = yLabel;
+                figSettings.title = [yLabel,' (',xLabel,') - ',num2str(corrs(indCorr(i)))];
+                obj.plotSigScatter(xfield,yfield,figSettings,[outputPath,yLabel,'-',xLabel,'.png']);
+            end
+        end
+
+
+        function plotSigScatter(obj,xfield,yfield,figSettings,outputName)
+            f=figure();
+            hold on
+
+            caseTypes = {obj.regularCase,obj.smallVarCases,obj.largeVarCases};
+            %caseColors = ['r','g','b'];
+            for caseType = 1:length(caseTypes)
+                cases = caseTypes{caseType};
+                x = obj.getField(cases,xfield);
+                y = obj.getField(cases,yfield);
+                %scatter(x,y,caseColors(caseType))
+                scatter(x,y)
+            end
+            
+            ax = gca;
+            if isfield(figSettings,'log')
+                if max(figSettings == 'x')
+                    ax.XScale = 'log';
+                end
+                if max(figSettings == 'y')
+                    ax.YScale = 'log';
+                end
+            end
+
+            % Interesting lines (for example zero line)
+            if isfield(figSettings,'lines')
+                for figLine = figSettings.lines
+                    plot(figLine{1}(1,:),figLine{1}(2,:));
+                end
+            end
+
+            % Titles and Labels
+            xLabel = strjoin(xfield(2:end),'.');
+            yLabel = strjoin(yfield(2:end),'.');
+            if isfield(figSettings,'title');
+                title(figSettings.title,'FontSize',18);
+            else
+                title([yLabel,' (',xLabel,')'],'FontSize',18);
+            end
+            if isfield(figSettings,'xLabel');
+                xlabel(figSettings.xLabel,'FontSize',12);
+            else
+                xlabel(xLabel);
+            end
+            if isfield(figSettings,'yLabel');
+                ylabel(figSettings.yLabel,'FontSize',12);
+            else
+                ylabel(yLabel);
+            end
+
+                
+
+            legend('regelur','small variation','large variation','Location','bestoutside');
+
+            saveas(f,outputName);
+        end
+
+
+        function lines = getLines(obj,xfield,yfield,linefield)
+            lineVals = obj.getField(obj.workCases,linefield);
+            uLineVals = unique(lineVals);
+            for i = 1:length(uLineVals)
+                cases = obj.workCases(lineVals==uLineVals(i));
+                lines{i} = cat(1,obj.getField(cases,xfield),obj.getField(cases,yfield));
+            end
+        end
+
+
+        function vals = getField(obj,cases,fieldList)
+            vals = zeros(1,length(cases));
+            for i = 1:length(vals)
+                lst = getfield(obj,fieldList{1});
+                val = lst(cases(i));
+
+                for fieldID = 2:length(fieldList)
+                    val = getfield(val,fieldList{fieldID});
+                end
+
+                if isempty(val)
+                    vals(i) = NaN;
+                else    
+                    vals(i) = val;
+                end
+            end
+        end
         
+
         function caseOutputPath = getCaseOutputPath(obj,caseNum)
             caseOutputPath = [obj.outputPath,'Case_',num2str(caseNum),'/'];
             [status,message,messageid] = mkdir(caseOutputPath);
