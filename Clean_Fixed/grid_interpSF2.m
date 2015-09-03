@@ -3,8 +3,11 @@ function [fgas,fgasp,fgasMQ,fgasMQp] = grid_interpSF2(flag,flagM,JLW21,z,Ispec,f
     global pathname_DataBackgrounds
     
     V1zINchanges=1;
-    MQ_Vc=16.5; %MQ doesn't form below atomic cooling mass according to Tal Alexander's work.
 
+    %%% MATAN CHANGE - 2015/09/02
+    %MQ_Vc=16.5; %MQ doesn't form below atomic cooling mass according to Tal Alexander's work.
+    MQ_Vc=max(16.5,flagM);
+    %%% END CHANGE
     global grid_interpSF2_returnOnlyFgas; % <-- REMOVE DEFINITION BELOW in previous versions
 
     if isempty(grid_interpSF2_returnOnlyFgas)
