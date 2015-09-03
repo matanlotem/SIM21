@@ -41,6 +41,24 @@ classdef SIM21Analysis
             SIM21Analysis.plotZXHIGraph(dataPath,outputPath,runID,add2Title);
         end
         
+
+        function plotTKbyZ(dataPath,outputPath,runID,add2Title)
+            figSettings.log = 'xy';
+            figSettings.xLim = [min(SIM21Analysis.TKZ),max(SIM21Analysis.TKZ)];
+            figSettings.yTick = [3,10,30,100,300,1000,3000,10000];
+            if ~isempty(add2Title)
+                add2Title = [' - ',add2Title];
+            end
+            figSettings.title = ['TK(z)',add2Title];
+            figSettings.xLabel = '1+z';
+            figSettings.yLabel = 'TK [K]';
+
+            figSettings.lines = [SIM21Analysis.plotLine(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID),''),...
+                                 SIM21Analysis.plotLine(cat(1,SIM21Analysis.TKZ,SIM21Gets.getTcmb(SIM21Analysis.TKZ)),'TCMB','k',':',0.2)];
+            figName = [outputPath,SIM21Analysis.TKMagic,'2',runID,'.png'];
+            SIM21Analysis.plotData2(outputPath,figName,figSettings);
+        end
+
         
         function plotZTKGraph(dataPath,outputPath,runID,add2Title)
             figSettings.log = 'xy';
@@ -195,23 +213,35 @@ classdef SIM21Analysis
             x = XYData(1,:);
             y = XYData(2,:);
             
+            %% Set logarithmic axes
+            %if isfield(figSettings,'log')
+            %    if isequal(figSettings.log,'yx')
+            %        figSettings.log = 'xy';
+            %    end
+            %    switch figSettings.log
+            %        case 'x'
+            %            semilogx(x,y);
+            %        case 'y'
+            %            semilogy(x,y);
+            %        case 'xy'
+            %            loglog(x,y)
+            %        otherwise
+            %            plot(x,y);
+            %    end
+            %else
+            %    plot(x,y);
+            %end
+            plot(x,y);
+            ax = gca;
+
             % Set logarithmic axes
             if isfield(figSettings,'log')
-                if isequal(figSettings.log,'yx')
-                    figSettings.log = 'xy';
+                if max(figSettings.log == 'x')
+                    ax.XScale = 'log';
                 end
-                switch figSettings.log
-                    case 'x'
-                        semilogx(x,y);
-                    case 'y'
-                        semilogy(x,y);
-                    case 'xy'
-                        loglog(x,y)
-                    otherwise
-                        plot(x,y);
+                if max(figSettings.log == 'y')
+                    ax.YScale = 'log';
                 end
-            else
-                plot(x,y);
             end
             hold on;
             
@@ -231,7 +261,6 @@ classdef SIM21Analysis
             end
             
             % Set tick marks
-            ax = gca;
             if isfield(figSettings,'xTick');
                 ax.XTick = figSettings.xTick;
             else
@@ -264,6 +293,94 @@ classdef SIM21Analysis
             saveas(f,outputName);
         end
         
+
+        function plotData2(outputPath,outputName,figSettings)
+            % Plot data
+            f=figure();
+            hold on;
+            
+            for pline = figSettings.lines
+                %pline = figLine{1};
+                h = plot(pline.x,pline.y);
+                if isfield(pline,'lineColor')
+                    h.Color = pline.lineColor;
+                end
+                if isfield(pline,'lineStyle')
+                    h.LineStyle = pline.lineStyle;
+                end
+                if isfield(pline,'lineWidth')
+                    h.LineWidth = pline.lineWidth;
+                end
+            end
+            
+            ax = gca;
+
+            % Set logarithmic axes
+            if isfield(figSettings,'log')
+                if max(figSettings.log == 'x')
+                    ax.XScale = 'log';
+                end
+                if max(figSettings.log == 'y')
+                    ax.YScale = 'log';
+                end
+            end
+            % Set limits
+            if isfield(figSettings,'xLim')
+                xlim(figSettings.xLim);
+            end
+            if isfield(figSettings,'yLim')
+                ylim(figSettings.yLim);
+            end
+            % Set tick marks
+            if isfield(figSettings,'xTick');
+                ax.XTick = figSettings.xTick;
+            else
+                1+1;
+                ax.XTick = floor(min(ax.XLim)/10)*10:10:max(ax.XLim);
+            end
+            if isfield(figSettings,'yTick')
+                ax.YTick = figSettings.yTick;
+            else
+                2+2;
+                numOfYTicks = 5;
+                yhop = (max(ax.YLim)-min(ax.YLim))/numOfYTicks;
+                ymag = 10^floor(log10(yhop));
+                yhop = floor(yhop/ymag)*ymag;
+                ax.YTick = (ceil(min(ax.YLim) / yhop) * yhop):yhop:max(ax.YLim);
+            end
+            
+            % Titles and Labels
+            if isfield(figSettings,'title');
+                title(figSettings.title,'FontSize',18);
+            end
+            if isfield(figSettings,'xLabel');
+                xlabel(figSettings.xLabel,'FontSize',12);
+            end
+            if isfield(figSettings,'yLabel');
+                ylabel(figSettings.yLabel,'FontSize',12);
+            end
+            
+            hold off;
+            saveas(f,outputName);
+        end
+
+
+        function pline = plotLine(XYData,lineName,varargin)
+            % create line object
+            pline.x = XYData(1,:);
+            pline.y = XYData(2,:);
+            for argNum = 1:nargin-2
+                switch argNum
+                case 1
+                    pline.lineColor = varargin{argNum};
+                case 2
+                    pline.lineStyle = varargin{argNum};
+                case 3
+                    pline.lineWidth = varargin{argNum};
+                end
+            end
+        end
+
         
         function specialParams=calcSpecialParams(dataPath,outputPath,runID)
             %Calculate interesting parameters for specific run

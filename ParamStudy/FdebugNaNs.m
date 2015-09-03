@@ -86,25 +86,25 @@ classdef FdebugNaNs
         end
         
         
-        function compareZ(z,c,dataPath,tmpDataPath)
+        function compareZ(z,c,dataPath,tmpDataPath,compPath)
             disp(['==Checking z=',num2str(z),'==']);            
-            FdebugNaNs.compareMagic(SIM21Analysis.xHIMagic,z,c,SIM21Analysis.xHIZ,dataPath);
-            FdebugNaNs.compareMagic(SIM21Analysis.TKMagic,z-1,c,SIM21Analysis.TKZ,dataPath);
-            FdebugNaNs.compareMagic(SIM21Analysis.T21cmMagic,z,c,SIM21Analysis.T21cmZ,dataPath);
-            FdebugNaNs.compareMagic(SIM21Analysis.NeutMagic,z,c,SIM21Analysis.NeutZ,dataPath);
-            FdebugNaNs.compareMagic(SIM21Analysis.EpsMagic,z,c,SIM21Analysis.EpsZ,tmpDataPath);
-            FdebugNaNs.compareMagic(SIM21Analysis.XeMagic,z-1,c,SIM21Analysis.XeZ,tmpDataPath);
-            FdebugNaNs.compareMagic(SIM21Analysis.JLWMagic,z,c,SIM21Analysis.JLWZ,tmpDataPath);
-            FdebugNaNs.compareMagic(SIM21Analysis.JalphaMagic,z,c,SIM21Analysis.JalphaZ,tmpDataPath);
-            FdebugNaNs.compareMagic(SIM21Analysis.LionMagic,z,c,SIM21Analysis.LionZ,tmpDataPath);
+            FdebugNaNs.compareMagic(SIM21Analysis.xHIMagic,z,c,SIM21Analysis.xHIZ,dataPath,compPath);
+            FdebugNaNs.compareMagic(SIM21Analysis.TKMagic,z-1,c,SIM21Analysis.TKZ,dataPath,compPath);
+            FdebugNaNs.compareMagic(SIM21Analysis.T21cmMagic,z,c,SIM21Analysis.T21cmZ,dataPath,compPath);
+            FdebugNaNs.compareMagic(SIM21Analysis.NeutMagic,z,c,SIM21Analysis.NeutZ,dataPath,compPath);
+            FdebugNaNs.compareMagic(SIM21Analysis.EpsMagic,z,c,SIM21Analysis.EpsZ,tmpDataPath,compPath);
+            FdebugNaNs.compareMagic(SIM21Analysis.XeMagic,z-1,c,SIM21Analysis.XeZ,tmpDataPath,compPath);
+            FdebugNaNs.compareMagic(SIM21Analysis.JLWMagic,z,c,SIM21Analysis.JLWZ,tmpDataPath,compPath);
+            FdebugNaNs.compareMagic(SIM21Analysis.JalphaMagic,z,c,SIM21Analysis.JalphaZ,tmpDataPath,compPath);
+            FdebugNaNs.compareMagic(SIM21Analysis.LionMagic,z,c,SIM21Analysis.LionZ,tmpDataPath,compPath);
         end
         
         
-        function compareMagic(Magic,z,c,zs,dataPath)
+        function compareMagic(Magic,z,c,zs,dataPath,compPath)
             if sum(find(zs==z))>0
                 msg = '';
                 a1 = SIM21Analysis.genDataFileName(dataPath,Magic,c.ID,z);
-                a2 = SIM21Analysis.genDataFileName([dataPath,'tmp/'],Magic,c.ID,z);
+                a2 = SIM21Analysis.genDataFileName([dataPath,compPath],Magic,c.ID,z);
                 if exist(a1, 'file') ~= 2
                     msg = [msg,'No File'];
                 elseif exist(a2, 'file') ~= 2
