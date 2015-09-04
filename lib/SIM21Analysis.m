@@ -1,170 +1,99 @@
 classdef SIM21Analysis
     properties(Constant)
-        %Data Matrix settings
-        xHIMagic = 'xHI';
-        xHIZ = [6:0.1:15,16:60];
-        TKMagic = 'TK';
-        TKZ = [5:64];
-        T21cmMagic = 'T21cm';
-        T21cmZ = [6:60];
-        NeutMagic = 'Neut';
-        NeutZ = [6:0.1:15,16:60];
-        EpsMagic = 'eps';
-        EpsZ = [6:60];
-        XeMagic = 'xe';
-        XeZ = [5:64];
-        JLWMagic = 'JLW';
-        JLWZ = [6:66];
-        JalphaMagic = 'Jalpha';
-        JalphaZ = [6:60];
-        LionMagic = 'Lion';
-        LionZ = [6:60];
         PwSpZ = [6:0.1:15,16:40];
     end
     
-    methods(Static)
-        function analyse()
-            dataPath = '/scratch300/matanlotem/Data/';
-            outputPath = '/scratch300/matanlotem/Analysis/';
-            runID = '_0_0.05_1_16.5_1_1_0.075_0_0_2_1_2';
-            
-            SIM21Analysis.plotZGraphs(dataPath,outputPath,runID);
-            specialParams=SIM21Analysis.calcSpecialParams(dataPath,outputPath,runID);
-            SIM21Analysis.plotPowerSpectrums(outputPath,runID);
-        end
-        
-        
-        function plotZGraphs(dataPath,outputPath,runID,add2Title)
+    methods(Static)        
+        function plotGraphsByZ(cases)
             % Plot TK, T21cm and xHI Graphs
-            SIM21Analysis.plotZTKGraph(dataPath,outputPath,runID,add2Title);
-            SIM21Analysis.plotZT21cmGraph(dataPath,outputPath,runID,add2Title);
-            SIM21Analysis.plotZXHIGraph(dataPath,outputPath,runID,add2Title);
+            SIM21Analysis.plotTKByZ(cases);
+            SIM21Analysis.plotT21cmByZ(cases);
+            SIM21Analysis.plotXHIByZ(cases);
         end
         
 
-        function plotTKbyZ(dataPath,outputPath,runID,add2Title)
+        function plotTKByZ(cases)
+            c = cases(end);
+            figSettings = SIM21Analysis.initFigSettings('TK(z)',c.name,'1+z','TK [K]');
             figSettings.log = 'xy';
-            figSettings.xLim = [min(SIM21Analysis.TKZ),max(SIM21Analysis.TKZ)];
+                figSettings.xLim = [min(SIM21Utils.TK.z),max(SIM21Utils.TK.z)];
             figSettings.yTick = [3,10,30,100,300,1000,3000,10000];
-            if ~isempty(add2Title)
-                add2Title = [' - ',add2Title];
+            for c = cases
+                figSettings.lines{end+1} = SIM21Analysis.plotLine(SIM21Analysis.getZData(c,SIM21Utils.TK.z,SIM21Utils.TK.magic),c.name);
             end
-            figSettings.title = ['TK(z)',add2Title];
-            figSettings.xLabel = '1+z';
-            figSettings.yLabel = 'TK [K]';
-
-            figSettings.lines = [SIM21Analysis.plotLine(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID),''),...
-                                 SIM21Analysis.plotLine(cat(1,SIM21Analysis.TKZ,SIM21Gets.getTcmb(SIM21Analysis.TKZ)),'TCMB','k',':',0.2)];
-            figName = [outputPath,SIM21Analysis.TKMagic,'2',runID,'.png'];
-            SIM21Analysis.plotData2(outputPath,figName,figSettings);
+            figSettings.lines{end+1} = SIM21Analysis.plotLine(cat(1,SIM21Utils.TK.z,SIM21Gets.getTcmb(SIM21Utils.TK.z)),'TCMB','k',':',0.2);
+            figName = [c.outputPath,SIM21Utils.TK.magic,c.ID,'.png'];
+            SIM21Analysis.plotData(figName,figSettings);
         end
 
-        
-        function plotZTKGraph(dataPath,outputPath,runID,add2Title)
-            figSettings.log = 'xy';
-            figSettings.xLim = [min(SIM21Analysis.TKZ),max(SIM21Analysis.TKZ)+10];
-            %figSettings.yLim = [4,1000];
-            figSettings.yTick = [3,10,30,100,300,1000,3000,10000];
-            if ~isempty(add2Title)
-                add2Title = [' - ',add2Title];
-            end
-            figSettings.title = ['TK(z)',add2Title];
-            figSettings.xLabel = '1+z';
-            figSettings.yLabel = 'TK [K]';
-            figSettings.lines = {cat(1,SIM21Analysis.TKZ(2:end),SIM21Gets.getTcmb(SIM21Analysis.TKZ(2:end)))};
-            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,0,runID,figSettings);
-        end
-        
-        
-        function plotZT21cmGraph(dataPath,outputPath,runID,add2Title)
+
+        function plotT21cmByZ(cases)
+            c = cases(end);
+            figSettings = SIM21Analysis.initFigSettings('T21cm(z)',c.name,'1+z','T21cm [mK]');
             figSettings.log = 'x';
-            figSettings.xLim = [min(SIM21Analysis.T21cmZ),max(SIM21Analysis.T21cmZ)+10];
-            if ~isempty(add2Title)
-                add2Title = [' - ',add2Title];
+            figSettings.xLim = [min(SIM21Utils.T21cm.z),max(SIM21Utils.T21cm.z)+10];
+            for c = cases
+                figSettings.lines{end+1} = SIM21Analysis.plotLine(SIM21Analysis.getZData(c,SIM21Utils.T21cm.z,SIM21Utils.T21cm.magic),c.name);
             end
-            figSettings.title = ['T21cm(z)',add2Title];
-            figSettings.xLabel = '1+z';
-            figSettings.yLabel = 'T21cm [mK]';
-            figSettings.lines = {cat(1,SIM21Analysis.T21cmZ(2:end),zeros(1,length(SIM21Analysis.T21cmZ(2:end))))};
-            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,0,runID,figSettings);
+            figSettings.lines{end+1} = SIM21Analysis.plotLine(cat(1,SIM21Utils.T21cm.z,zeros(1,length(SIM21Utils.T21cm.z))),'T0','k',':',0.2);
+            figName = [c.outputPath,SIM21Utils.T21cm.magic,c.ID,'.png'];
+            SIM21Analysis.plotData(figName,figSettings);
         end
-        
-        
-        function plotZXHIGraph(dataPath,outputPath,runID,add2Title)
-            figSettings.xLim = [min(SIM21Analysis.xHIZ),max(SIM21Analysis.xHIZ)+1];
+
+
+        function plotXHIByZ(cases)
+            c = cases(end);
+            figSettings = SIM21Analysis.initFigSettings('xHI(z)',c.name,'1+z','xHI');
+            figSettings.xLim = [min(SIM21Utils.xHI.z),max(SIM21Utils.xHI.z)+1];
             figSettings.yLim = [0,1.1];
-            if ~isempty(add2Title)
-                add2Title = [' - ',add2Title];
+            for c = cases
+                figSettings.lines{end+1} =SIM21Analysis.plotLine(SIM21Analysis.getZData(c,SIM21Utils.xHI.z,SIM21Utils.xHI.magic),c.name);
             end
-            figSettings.title = ['xHI(z)',add2Title];
-            figSettings.xLabel = '1+z';
-            figSettings.yLabel = 'xHI';
-            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,0,runID,figSettings);
+            figName = [c.outputPath,SIM21Utils.xHI.magic,c.ID,'.png'];
+            SIM21Analysis.plotData(figName,figSettings);
         end
         
         
-        function plotZEpsGraph(dataPath,outputPath,runID,add2Title)
+        function plotEpsByZ(cases)
+            c = cases(end);
+            figSettings = SIM21Analysis.initFigSettings('eps(z)',c.name,'1+z','eps');
             figSettings.log = 'y';
-            %figSettings.xLim = [min(SIM21Analysis.EpsZ),max(SIM21Analysis.EpsZ)+1];
             figSettings.yTick = repmat([10],1,13).^[-44:3:-8];
+            for c = cases
+                figSettings.lines{end+1} = SIM21Analysis.plotLine(SIM21Analysis.getZData(c,SIM21Utils.eps.z,SIM21Utils.eps.magic),c.name);
+            end
+            figName = [c.outputPath,SIM21Utils.eps.magic,c.ID,'.png'];
+            SIM21Analysis.plotData(figName,figSettings);
+        end
+
+
+        function plotXeByZ(cases)
+            c = cases(end);
+            figSettings = SIM21Analysis.initFigSettings('xe(z)',c.name,'1+z','xe');
+            figSettings.xLim = [min(SIM21Utils.xHI.z),max(SIM21Utils.xHI.z)+1];
+            figSettings.yLim = [0,1.1];
+            for c = cases
+                figSettings.lines{end+1} = SIM21Analysis.plotLine(SIM21Analysis.getZData(c,SIM21Utils.xe.z,SIM21Utils.xe.magic),c.name);
+            end
+            figName = [c.outputPath,SIM21Utils.xe.magic,c.ID,'.png'];
+            SIM21Analysis.plotData(figName,figSettings);
+        end
+
+
+        function figSettings = initFigSettings(title,add2Title,xLabel,yLabel)
             if ~isempty(add2Title)
                 add2Title = [' - ',add2Title];
             end
-            figSettings.title = ['Epsilon(z)',add2Title];
-            figSettings.xLabel = '1+z';
-            figSettings.yLabel = 'Epsilon';
-            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.EpsZ,SIM21Analysis.EpsMagic,0,runID,figSettings);
+            figSettings.title = [title,add2Title];
+            figSettings.xLabel = xLabel;
+            figSettings.yLabel = yLabel;
+            figSettings.lines = {};
         end
+                
         
-        
-        function plotZXeGraph(dataPath,outputPath,runID,add2Title)
-            figSettings.log = '';
-            %figSettings.yTick = repmat([10],1,13).^[-44:3:-8];
-            if ~isempty(add2Title)
-                add2Title = [' - ',add2Title];
-            end
-            figSettings.title = ['XE(z)',add2Title];
-            figSettings.xLabel = '1+z';
-            figSettings.yLabel = 'XE';
-            SIM21Analysis.plotByZ(dataPath,outputPath,SIM21Analysis.XeZ,SIM21Analysis.XeMagic,0,runID,figSettings);
-        end
-        
-        
-        function plotPowerSpectrums(outputPath,runID)
-            SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.1,['Atomic, Old spectrum - K=',num2str(0.1)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
-            SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.5,['Atomic, Old spectrum - K=',num2str(0.5)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
-            SIM21Analysis.plotPowerSpectrumByZ(outputPath,runID,'Atomic, Old spectrum','k [Mpc^{-1}]','k^3P(k)/2\pi^2 [mK^2]');
-        end
-        
-        
-        function plotPowerSpectrumByZ(outputPath,runID,figTitle,figXLabel,figYLabel)
-            zs = [8,8.7,10.37,17,11.53,22,30];
-            lineColors = {'r','g','b','m','c','k','k'};
-            lineStyles = {'-','-','-','-','-','-','--'};
-            lineWidths = ones(1,7);
-            SIM21Analysis.plotPowerSpectrumByZs(outputPath,runID,zs,lineColors,lineStyles,lineWidths,figTitle,figXLabel,figYLabel);
-        end
-        
-        
-        function plotByZ(dataPath,outputPath,z,Magic,interpStep,runID,figSettings)
-            % Plot different graphs as function of Z
-            
-            SIM21Analysis.message(['=== STARTING ',Magic,' ===']);
-            dataMat = SIM21Analysis.getZData(dataPath,outputPath,z,Magic,runID);
-            if interpStep == 0
-                XYData = dataMat;
-            else
-                XYData = SIM21Analysis.interpData(dataMat,interpStep);
-            end
-            XYData(1,:) = XYData(1,:) + 1; % z+1
-            figName = [outputPath,Magic,runID,'.png'];
-            SIM21Analysis.plotData(outputPath,figName,XYData,figSettings);
-        end
-        
-        
-        function dataMat = getZData(dataPath,outputPath,z,Magic,runID)
+        function dataMat = getZData(c,zs,Magic)
             % Create or import mean data matrix
-            dataName = [outputPath,Magic,'_Data',runID,'.mat'];
+            dataName = [c.outputPath,Magic,'_Data',c.ID,'.mat'];
             
             % Check if output exists and load
             if exist(dataName, 'file') == 2
@@ -173,13 +102,14 @@ classdef SIM21Analysis
             else
                 % Calculate Mean
                 SIM21Analysis.message('calculating mean');
-                dataMat=cat(1,z,zeros(1,length(z)));
+                dataMat=cat(1,zs,zeros(1,length(zs)));
                 for i = 1:length(dataMat)
-                    fileName = SIM21Analysis.genDataFileName(dataPath,Magic,runID,dataMat(1,i));
+                    z = dataMat(1,i);
+                    fileName = SIM21Analysis.genDataFileName(dataPath,Magic,c.ID,z);
                     if exist(fileName, 'file') == 2
                         dataMat(2,i) = mean(mean(mean(importdata(fileName))));
                     else % for half run simulations
-                        SIM21Analysis.errorMessage(['Error: Missing ',Magic,' z=',num2str(dataMat(1,i)),' file']);
+                        SIM21Analysis.errorMessage(['Error: Missing ',Magic,' z=',num2str(z),' file']);
                         dataMat(2,i) = NaN;
                     end
                     if mod(i,10) == 0
@@ -205,102 +135,13 @@ classdef SIM21Analysis
         end
         
         
-        function plotData(outputPath,outputName,XYData,figSettings)
-            % Plot data by XY coordinates
-            SIM21Analysis.message('plotting');
-            f=figure();
-            
-            x = XYData(1,:);
-            y = XYData(2,:);
-            
-            %% Set logarithmic axes
-            %if isfield(figSettings,'log')
-            %    if isequal(figSettings.log,'yx')
-            %        figSettings.log = 'xy';
-            %    end
-            %    switch figSettings.log
-            %        case 'x'
-            %            semilogx(x,y);
-            %        case 'y'
-            %            semilogy(x,y);
-            %        case 'xy'
-            %            loglog(x,y)
-            %        otherwise
-            %            plot(x,y);
-            %    end
-            %else
-            %    plot(x,y);
-            %end
-            plot(x,y);
-            ax = gca;
-
-            % Set logarithmic axes
-            if isfield(figSettings,'log')
-                if max(figSettings.log == 'x')
-                    ax.XScale = 'log';
-                end
-                if max(figSettings.log == 'y')
-                    ax.YScale = 'log';
-                end
-            end
-            hold on;
-            
-            % Interesting lines (for example zero line)
-            if isfield(figSettings,'lines')
-                for figLine = figSettings.lines
-                    plot(figLine{1}(1,:),figLine{1}(2,:),':k','lineWidth',0.1);
-                end
-            end
-            
-            % Set limits
-            if isfield(figSettings,'xLim')
-                xlim(figSettings.xLim);
-            end
-            if isfield(figSettings,'yLim')
-                ylim(figSettings.yLim);
-            end
-            
-            % Set tick marks
-            if isfield(figSettings,'xTick');
-                ax.XTick = figSettings.xTick;
-            else
-                ax.XTick = floor(min(x)/10)*10:10:max(x);
-            end
-            if isfield(figSettings,'yTick')
-                ax.YTick = figSettings.yTick;
-            else
-                numOfYTicks = 5;
-                yhop = (max(y)-min(y))/numOfYTicks;
-                ymag = 10^floor(log10(yhop));
-                yhop = floor(yhop/ymag)*ymag;
-                ax.YTick = (ceil(min(y) / yhop) * yhop):yhop:max(y);
-            end
-            
-            % Titles and Labels
-            if isfield(figSettings,'title');
-                title(figSettings.title,'FontSize',18);
-            end
-            if isfield(figSettings,'xLabel');
-                xlabel(figSettings.xLabel,'FontSize',12);
-            end
-            if isfield(figSettings,'yLabel');
-                ylabel(figSettings.yLabel,'FontSize',12);
-            end
-            
-            hold off;
-            
-            SIM21Analysis.message('saving plot');
-            saveas(f,outputName);
-        end
-        
-
-        function plotData2(outputPath,outputName,figSettings)
+        function plotData(outputName,figSettings)
             % Plot data
             f=figure();
             hold on;
             
-            for pline = figSettings.lines
-                %pline = figLine{1};
+            for figLine = figSettings.lines
+                pline = figLine{1};
                 h = plot(pline.x,pline.y);
                 if isfield(pline,'lineColor')
                     h.Color = pline.lineColor;
@@ -382,14 +223,14 @@ classdef SIM21Analysis
         end
 
         
-        function specialParams=calcSpecialParams(dataPath,outputPath,runID)
+        function specialParams=calcSpecialParams(c)
             %Calculate interesting parameters for specific run
             SIM21Analysis.message('calculating parameters');
             interpStep=0.001;
             
-            xHIData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID),interpStep);
-            TKData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.TKZ,SIM21Analysis.TKMagic,runID),interpStep);
-            T21cmData = SIM21Analysis.interpData(SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.T21cmZ,SIM21Analysis.T21cmMagic,runID),interpStep);
+            xHIData = SIM21Analysis.interpData(SIM21Analysis.getZData(c,SIM21Utils.xHI.z,SIM21Utils.xHI.magic),interpStep);
+            TKData = SIM21Analysis.interpData(SIM21Analysis.getZData(c,SIM21Utils.TK.z,SIM21Utils.TK.magic),interpStep);
+            T21cmData = SIM21Analysis.interpData(SIM21Analysis.getZData(c,SIM21Utils.T21cm.z,SIM21Utils.T21cm.magic),interpStep);
             
             % MIN / MAX T21cm
             minT21cmInd = find(T21cmData(2,:)==min(T21cmData(2,:)));
@@ -431,14 +272,14 @@ classdef SIM21Analysis
             specialParams.xHI0.z = xHIData(1,xHI0Ind);
             
             % Heating Transition: Tcmb = Tk
-            TCMBData = SIM21Analysis.interpData(cat(1,SIM21Analysis.TKZ,SIM21Gets.getTcmb(SIM21Analysis.TKZ)),interpStep);
+            TCMBData = SIM21Analysis.interpData(cat(1,SIM21Utils.TK.z,SIM21Gets.getTcmb(SIM21Utils.TK.z)),interpStep);
             THTInd = find(diff(sign(TKData(2,:)-TCMBData(2,:))));
             specialParams.THT = TKData(:,THTInd);
             specialParams.THT.z = TKData(1,THTInd);
             specialParams.THT.T = TKData(2,THTInd);
             
             % Save matrix
-            fileName = [outputPath,'specialParams',runID];
+            fileName = [c.outputPath,'specialParams',c.ID];
             save([fileName,'.mat'],'specialParams');
             
             % Save readable output
@@ -460,7 +301,26 @@ classdef SIM21Analysis
                           'Heating Transition\n\tz = ',num2str(specialParams.THT.z),'\n\tT = ',num2str(specialParams.THT.T),'\n'];
             niceOutput = sprintf(niceOutput);
         end
-            
+        
+
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%% POWER SPECTRUM STUFF %%%
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+        function plotPowerSpectrums(outputPath,runID)
+            SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.1,['Atomic, Old spectrum - K=',num2str(0.1)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
+            SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.5,['Atomic, Old spectrum - K=',num2str(0.5)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
+            SIM21Analysis.plotPowerSpectrumByZ(outputPath,runID,'Atomic, Old spectrum','k [Mpc^{-1}]','k^3P(k)/2\pi^2 [mK^2]');
+        end
+        
+        
+        function plotPowerSpectrumByZ(outputPath,runID,figTitle,figXLabel,figYLabel)
+            zs = [8,8.7,10.37,17,11.53,22,30];
+            lineColors = {'r','g','b','m','c','k','k'};
+            lineStyles = {'-','-','-','-','-','-','--'};
+            lineWidths = ones(1,7);
+            SIM21Analysis.plotPowerSpectrumByZs(outputPath,runID,zs,lineColors,lineStyles,lineWidths,figTitle,figXLabel,figYLabel);
+        end
+        
         
         function plotPowerSpectrumByK(outputPath,runID,k,figTitle,figXLabel,figYLabel)
             SIM21Analysis.message('plotting power spectrum');
@@ -550,7 +410,10 @@ classdef SIM21Analysis
         end
         
         
-        function tauCMB = checkTau(dataPath,outputPath,runID)
+        %%%%%%%%%%%%%%%%%%%
+        %%% OTHER STUFF %%%
+        %%%%%%%%%%%%%%%%%%%
+        function tauCMB = checkTau(c)
             % Aviad's code with fixes - I have no idea what this does...
             load(SIM21Utils.getMatrixPath('Planck_parameters'));
 
@@ -565,7 +428,7 @@ classdef SIM21Analysis
             dldz = c./SIM21Gets.getHz(zion)./(1+zion)*3e24;%cm
             ne = Ob*(1-Y)*(1+y)*(rcr/mH)*(1+zion).^3;%nb./(3e24)^3.*(1+zc2).^3.*(1-xHImatR(indp,:));% 
 
-            xHImat = SIM21Analysis.getZData(dataPath,outputPath,SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,runID);
+            xHImat = SIM21Analysis.getZData(c,SIM21Utils.xHI.z,SIM21Utils.xHI.magic);
             xHImat = [zeros(1,60),xHImat(2,:)];
             tauCMB = sum((1-xHImat(1:151)).*ne(1:151).*sigmaT.*dldz(1:151))*0.1+sum((1-xHImat(152:156)).*ne(152:156).*sigmaT.*dldz(152:156))*1;
         end
@@ -582,7 +445,7 @@ classdef SIM21Analysis
         
         function message(msg)
             % SIM21Analysis class output
-            if false
+            if true
                 disp(msg);
             end
         end

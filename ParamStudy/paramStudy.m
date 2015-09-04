@@ -17,7 +17,6 @@ classdef paramStudy < handle
         function obj = paramStudy()
             addpath('/a/home/cc/tree/taucc/students/physics/matanlotem/Work/SIM21/lib/');
             
-            %paramDataPath = '/a/home/cc/tree/taucc/students/physics/matanlotem/Work/ParamStudy/ParamStudy.txt';
             paramDataPath = 'ParamStudy.txt';
             cubeNum = 9;
             obj.dataPath = '/scratch300/matanlotem/Data/';
@@ -39,61 +38,52 @@ classdef paramStudy < handle
 
         function paramCases = getCases(obj,paramDataPath,cubeNum)
             rawData = readtable(paramDataPath,'Delimiter','\t');
-            paramCases = struct();
+            %paramCases = struct();
             for i = 1:height(rawData)
-                paramCases(i).caseNum = rawData.CASE(i);
-                paramCases(i).ncube = cubeNum;
-                paramCases(i).fstar = rawData.fstar(i);
-                paramCases(i).vbc = rawData.vbc(i);
-                paramCases(i).vc = rawData.vc(i);
-                paramCases(i).fx = rawData.fx(i);
-                paramCases(i).sed = rawData.sed(i);
-                paramCases(i).tau = rawData.tau(i);
-                paramCases(i).feedback = rawData.LWFlag(i);
-                paramCases(i).delayParam = rawData.LWW_s(i);
-                paramCases(i).pop = rawData.pop(i);
-                paramCases(i).fsfunc = rawData.func(i);
-                paramCases(i).photoHeating = rawData.PH(i);
-                paramCases(i).zeta = char(rawData.Zeta(i));
-                if isequal(paramCases(i).zeta,'PROBLEM')
-                    paramCases(i).zeta = NaN;
-                    paramCases(i).fxHI = NaN;
-                    paramCases(i).atau = NaN;
-                    paramCases(i).isgood = false;
+                caseNum = rawData.CASE(i);
+                paramCases(caseNum).caseNum = caseNum;
+                caseName = ['Case ',num2str(caseNum)];
+                zeta = char(rawData.Zeta(i));
+                if isequal(zeta,'PROBLEM')
+                    zeta = NaN;
+                    paramCases(caseNum).fxHI = NaN;
+                    paramCases(caseNum).atau = NaN;
+                    paramCases(caseNum).isgood = false;
                 else
-                    paramCases(i).zeta = str2num(paramCases(i).zeta);
-                    paramCases(i).fxHI = rawData.xHI_z_6_(i);
-                    paramCases(i).atau = rawData.tau_1(i);
-                    paramCases(i).isgood = true;
+                    zeta = str2num(zeta);
+                    paramCases(caseNum).fxHI = rawData.xHI_z_6_(i);
+                    paramCases(caseNum).atau = rawData.tau_1(i);
+                    paramCases(caseNum).isgood = true;
                 end
-                paramCases(i).ID = SIM21Utils.getID(paramCases(i).ncube,paramCases(i).fstar,paramCases(i).vbc,paramCases(i).vc,...
-                                                    paramCases(i).fx,paramCases(i).sed,paramCases(i).tau,paramCases(i).feedback,...
-                                                    paramCases(i).delayParam,paramCases(i).pop,paramCases(i).fsfunc,paramCases(i).photoHeating);
+                paramCases(caseNum).c = SIM21Case(caseName,obj.dataPath,obj.tmpDataPath,obj.getCaseOutputPath(caseNum),...
+                                                  cubeNum,rawData.fstar(i),rawData.vbc(i),rawData.vc(i),rawData.fx(i),rawData.sed(i),rawData.tau(i),...
+                                                  rawData.LWFlag(i),rawData.LWW_s(i),rawData.pop(i),rawData.func(i),rawData.PH(i),zeta);
             end
         end
         
         
         function specialParams = getSpecialParams(obj)
-            for i = obj.workCases
-                paramMatName = [obj.getCaseOutputPath(i),'specialParams',obj.paramCases(i).ID,'.mat'];
+            for caseNum = obj.workCases
+                paramMatName = [obj.paramCases(caseNum).c.outputPath,'specialParams',obj.paramCases(caseNum).c.ID,'.mat'];
                 
                 % Check if specialParams exists and load
-                if exist(paramMatName, 'file') == 2
-                    specialParams(i)=importdata(paramMatName);
+                if exist(paramMatName) == 2
+                    specialParams(caseNum)=importdata(paramMatName);
                 else
-                    disp(i);
-                    specialParams(i) = SIM21Analysis.calcSpecialParams(obj.dataPath,obj.getCaseOutputPath(i),obj.paramCases(i).ID);
+                    disp(caseNum);
+                    specialParams(caseNum) = SIM21Analysis.calcSpecialParams(obj.paramCases(caseNum).c);
                 end
             end
         end
         
         
-        function specialParams = recalcSpecialParams(obj)
+        function recalcSpecialParams(obj)
             % Recalculate specialParams
             for caseNum = obj.workCases
                 disp(caseNum);
-                specialParams(caseNum) = SIM21Analysis.calcSpecialParams(obj.dataPath,obj.getCaseOutputPath(caseNum),obj.paramCases(caseNum).ID);
+                specialParams(caseNum) = SIM21Analysis.calcSpecialParams(obj.paramCases(caseNum).c);
             end
+            obj.specialParams = specialParams;
         end
         
 
@@ -119,10 +109,10 @@ classdef paramStudy < handle
             
             for caseNum = obj.workCases
                 disp(caseNum);
-                xHIData = SIM21Analysis.getZData(obj.dataPath,obj.getCaseOutputPath(caseNum),SIM21Analysis.xHIZ,SIM21Analysis.xHIMagic,obj.paramCases(caseNum).ID);
+                xHIData = SIM21Analysis.getZData(obj.paramCases(caseNum).c,SIM21Utils.xHI.z,SIM21Utils.xHI.magic);
                 fxHI = xHIData(2,1);
                 xHIData = [];
-                atau = SIM21Analysis.checkTau(obj.dataPath,obj.getCaseOutputPath(caseNum),obj.paramCases(caseNum).ID);
+                atau = SIM21Analysis.checkTau(c);
                 
                 rowStr = [formatCell(caseNum)                                     ,'\t',...
                           formatCell(obj.paramCases(caseNum).ID)                  ,'\t',...
@@ -163,9 +153,10 @@ classdef paramStudy < handle
         function plotAllZGraphs(obj)
             for caseNum = obj.workCases
                 disp(caseNum);
-                SIM21Analysis.plotZGraphs(obj.dataPath,obj.getCaseOutputPath(caseNum),obj.paramCases(caseNum).ID,['Case ',num2str(caseNum)]);
-                obj.plotEpsGraph(caseNum);
-                obj.plotXeGraph(caseNum);
+                c = obj.paramCases(caseNum).c;
+                SIM21Analysis.plotGraphsByZ(c);
+                SIM21Analysis.plotEpsByZ(c);
+                SIM21Analysis.plotXeByZ(c);
             end
         end
         
@@ -173,24 +164,18 @@ classdef paramStudy < handle
         function plotEpsGraphs(obj)
             for caseNum = obj.workCases
                 disp(caseNum);
-                obj.plotEpsGraph(caseNum);
+                SIM21Analysis.plotEpsByZ(obj.paramCases(caseNum).c);
             end
-        end
-        function plotEpsGraph(obj,caseNum)
-            SIM21Analysis.plotZEpsGraph(obj.tmpDataPath,obj.getCaseOutputPath(caseNum),obj.paramCases(caseNum).ID,['Case ',num2str(caseNum)]);
         end
         
         
         function plotXeGraphs(obj)
             for caseNum = obj.workCases
                 disp(caseNum);
-                obj.plotXeGraph(caseNum);
+                SIM21Analysis.plotXeByZ(obj.paramCases(caseNum).c);
             end
         end
-        function plotXeGraph(obj,caseNum)
-            SIM21Analysis.plotZXeGraph(obj.tmpDataPath,obj.getCaseOutputPath(caseNum),obj.paramCases(caseNum).ID,['Case ',num2str(caseNum)]);
-        end
-        
+
         
         function plotSomething(obj)
             f=figure();
@@ -346,7 +331,8 @@ classdef paramStudy < handle
                           {'specialParams','xCross','z1'},...
                           {'specialParams','xHI75','z'},{'specialParams','xHI50','z'},{'specialParams','xHI25','z'},{'specialParams','xHI0','z'},...
                           {'specialParams','THT','z'},{'specialParams','THT','T'},...
-                          {'paramCases','fstar'},{'paramCases','vbc'},{'paramCases','vc'},{'paramCases','fx'},{'paramCases','sed'},{'paramCases','atau'},...
+                          {'paramCases','c','fstar'},{'paramCases','c','vbc'},{'paramCases','c','vc'},...
+                          {'paramCases','c','fx'},{'paramCases','c','sed'},{'paramCases','atau'},...
                           {'tempParams','minMaxSlope','zDiff'},{'tempParams','xHI75_25','zDiff'}};
             for i = 1:length(corrParams)
                 corrVectors(:,i) = obj.getField(obj.workCases,corrParams{i})';
