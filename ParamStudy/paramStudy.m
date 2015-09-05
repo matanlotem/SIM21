@@ -1,7 +1,6 @@
 classdef paramStudy < handle
     properties
-        dataPath;
-        tmpDataPath;
+        pathExt;
         outputPath;
         regularCase;
         smallVarCases;
@@ -19,8 +18,7 @@ classdef paramStudy < handle
             
             paramDataPath = 'ParamStudy.txt';
             cubeNum = 9;
-            obj.dataPath = '/scratch300/matanlotem/Data/';
-            obj.tmpDataPath = '/scratch/matanlotem/Data/';
+            obj.pathExt = '';
             obj.outputPath = '/scratch300/matanlotem/ParamStudy/';
             obj.regularCase = [1];
             obj.smallVarCases = [2:33];
@@ -55,7 +53,7 @@ classdef paramStudy < handle
                     paramCases(caseNum).atau = rawData.tau_1(i);
                     paramCases(caseNum).isgood = true;
                 end
-                paramCases(caseNum).c = SIM21Case(caseName,obj.dataPath,obj.tmpDataPath,obj.getCaseOutputPath(caseNum),...
+                paramCases(caseNum).c = SIM21Case(caseName,obj.pathExt,obj.getCaseOutputPath(caseNum),...
                                                   cubeNum,rawData.fstar(i),rawData.vbc(i),rawData.vc(i),rawData.fx(i),rawData.sed(i),rawData.tau(i),...
                                                   rawData.LWFlag(i),rawData.LWW_s(i),rawData.pop(i),rawData.func(i),rawData.PH(i),zeta);
             end
@@ -109,7 +107,7 @@ classdef paramStudy < handle
             
             for caseNum = obj.workCases
                 disp(caseNum);
-                xHIData = SIM21Analysis.getZData(obj.paramCases(caseNum).c,SIM21Utils.xHI.z,SIM21Utils.xHI.magic);
+                xHIData = SIM21Analysis.getZData(obj.paramCases(caseNum).c,SIM21Utils.xHI);
                 fxHI = xHIData(2,1);
                 xHIData = [];
                 atau = SIM21Analysis.checkTau(c);

@@ -50,8 +50,10 @@ function RunBackgroundsParam2(outputExt,MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTa
     global pathname_Data2 % e. g. scratch300 (to save  xHI, Neut, TK, T21)  
     global pathname_DataBackgrounds % e. g. scratch300 (to save ICs, Window functions, grids)
 
-    if outputExt(end) ~= '/'
-        outputExt = [outputExt,'/'];
+    if ~ isempty(outputExt)
+        if outputExt(end) ~= '/'
+            outputExt = [outputExt,'/'];
+        end
     end
     pathname_Data1 = ['/scratch/matanlotem/Data/',outputExt];
     pathname_Data2 = ['/scratch300/matanlotem/Data/',outputExt];
