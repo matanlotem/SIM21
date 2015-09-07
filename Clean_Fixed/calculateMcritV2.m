@@ -15,7 +15,7 @@
 %% + currentIonization - Ionization (as a fraction) for z+1
 %%
 %% To run the tests set DEBUG=1 (define globally)
-function [Mcrit,currentIonization,a,b] = calculateMcritV2(flag,flagM,JLW21,fstarM,fstarA,FSfunc,directory, filePrefix, zMax, zMin, N, z)
+function [Mcrit,currentIonization,a,b] = calculateMcritV2(flag,flagM,JLW21,fstarM,fstarA,FSfunc,zeta,directory, filePrefix, zMax, zMin, N, z)
 
     global DEBUG;
     if isempty(DEBUG)
@@ -121,7 +121,9 @@ function [Mcrit,currentIonization,a,b] = calculateMcritV2(flag,flagM,JLW21,fstar
         a(~eq) = (fgas2(~eq)-fgas1(~eq))./(xHI2(~eq)-xHI1(~eq));
         b(~eq) = (xHI1(~eq).*fgas2(~eq)-xHI2(~eq).*fgas1(~eq))./(xHI1(~eq)-xHI2(~eq));
         
-        zeta=fstarM/0.05*19.48;
+        %%% MATAN CHANGE - 2015/09/07
+        %zeta=fstarM/0.05*19.48; DELETED
+        %%% END CHANGE
         
         xHI = min(1,max(0,(1-b.*zeta)./(1+a.*zeta))); % fgas = b+a*xHI = (1-xHI)/zeta
         xHI(eq)=xHI1(eq); %changed

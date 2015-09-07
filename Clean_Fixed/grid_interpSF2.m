@@ -1,4 +1,4 @@
-function [fgas,fgasp,fgasMQ,fgasMQp] = grid_interpSF2(flag,flagM,JLW21,z,Ispec,fstarM,fstarA,FSfunc,photoheatingOn,photoheatingVersion,calcfgasp)
+function [fgas,fgasp,fgasMQ,fgasMQp] = grid_interpSF2(flag,flagM,JLW21,z,Ispec,fstarM,fstarA,FSfunc,photoheatingOn,photoheatingVersion,zeta,calcfgasp)
     global pathname_Data2
     global pathname_DataBackgrounds
     
@@ -247,8 +247,7 @@ function [fgas,fgasp,fgasMQ,fgasMQp] = grid_interpSF2(flag,flagM,JLW21,z,Ispec,f
                 %%
                 %% Calculate Mcrit
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                [Mcrit,currentIonization] = calculateMcritV2(flag,flagM,JLW21,fstarM,fstarA,FSfunc,directory,filePrefix,zMax,zMin,N,z);
-
+                [Mcrit,currentIonization] = calculateMcritV2(flag,flagM,JLW21,fstarM,fstarA,FSfunc,zeta,directory,filePrefix,zMax,zMin,N,z);
                 %%
                 %% Save Mcrit
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

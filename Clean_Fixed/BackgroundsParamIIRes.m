@@ -87,7 +87,7 @@ function xHImean = BackgroundsParamIIRes(zcenter,ncube,fstar,flag,flagM,XeffTerm
                         
                         %---
                      
-            [fgas_z,fgas_zp] = grid_interpSF2(flag,flagM,feedback*JLW21,zint(iz),Ispec,fstar,fstar,FSfunc,photoheatingOn,photoheatingVersion,0);% fstar = 1 gives collapsed fraction
+            [fgas_z,fgas_zp] = grid_interpSF2(flag,flagM,feedback*JLW21,zint(iz),Ispec,fstar,fstar,FSfunc,photoheatingOn,photoheatingVersion,zeta,0);% fstar = 1 gives collapsed fraction
             F_interp(iz,:,:,:) = fgas_z/fstar;
             fgas_zp=[];        
         end
@@ -116,7 +116,7 @@ function xHImean = BackgroundsParamIIRes(zcenter,ncube,fstar,flag,flagM,XeffTerm
            JLW21 = zeros(N,N,N);
         end
         %----
-        [fgas,fgas_zp] = grid_interpSF2(flag,flagM,feedback*JLW21,zion(indzz),Ispec,fstar,fstar,FSfunc,photoheatingOn,photoheatingVersion,0);% fstar = 1 gives collapsed fraction
+        [fgas,fgas_zp] = grid_interpSF2(flag,flagM,feedback*JLW21,zion(indzz),Ispec,fstar,fstar,FSfunc,photoheatingOn,photoheatingVersion,zeta,0);% fstar = 1 gives collapsed fraction
         fgas=fgas/fstar;
         fgas_zp=[];
     end

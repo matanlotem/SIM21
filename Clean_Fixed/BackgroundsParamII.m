@@ -158,7 +158,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                 JLW21 = squeeze(exp(interp1(zint,log(abs(J_interp)),z0))); 
                
             end
-            [fgas_z,fgas_zp,fgasMQ_z,fgasMQ_zp] = grid_interpSF2(flag,flagM,feedback*JLW21,zii,Ispec,fstarM,fstarA,FSfunc,photoheatingOn,photoheatingVersion,1);% fstar inside %Q
+            [fgas_z,fgas_zp,fgasMQ_z,fgasMQ_zp] = grid_interpSF2(flag,flagM,feedback*JLW21,zii,Ispec,fstarM,fstarA,FSfunc,photoheatingOn,photoheatingVersion,zeta,1);% fstar inside %Q
                     
             dt = SIM21Gets.getztot(zii+dz)-SIM21Gets.getztot(zii);% [years]    
             dfdt_matrix(ii,:,:,:) = fftn((fgas_zp.*(1+delta_cube*Dp)-fgas_z.*(1+delta_cube*D)).*Lpix^3/dt);% 
@@ -358,7 +358,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         end 
        
        
-        fgas = grid_interpSF2(flag,flagM,feedback*JLW21,zcenter,Ispec,fstar,fstar,FSfunc,photoheatingOn,photoheatingVersion,0)/fstar;
+        fgas = grid_interpSF2(flag,flagM,feedback*JLW21,zcenter,Ispec,fstar,fstar,FSfunc,photoheatingOn,photoheatingVersion,zeta,0)/fstar;
         Maxfcoll = max(fgas,Maxfcoll);% adding the pixel
         Neut = (Maxfcoll<Threshold);% 1 if neutral, 0 if fully ionized
         xHI = max(0, (1-zeta*fgas).*Neut.*PrevNeut);% neutral fraction of each pixel (as in 21cmFAST)

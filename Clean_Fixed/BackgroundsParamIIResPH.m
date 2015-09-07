@@ -55,7 +55,7 @@ function xHImean = BackgroundsParamIIResPH(zcenter,ncube,fstar,flag,flagM,XeffTe
         JLW21 = squeeze(exp(interp1(zint,log(abs(J_interp)),z0))); 
        
     end
-    [fgas,fgas_zp] = grid_interpSF2(flag,flagM,feedback*JLW21,zcenter,Ispec,fstar,fstar,FSfunc,photoheatingOn,photoheatingVersion,0);% fstar = 1 gives collapsed fraction
+    [fgas,fgas_zp] = grid_interpSF2(flag,flagM,feedback*JLW21,zcenter,Ispec,fstar,fstar,FSfunc,photoheatingOn,photoheatingVersion,zeta,0);% fstar = 1 gives collapsed fraction
     fgas=fgas/fstar;
     fgas_zp=[];
    
