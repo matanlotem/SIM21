@@ -1,20 +1,24 @@
 classdef SIM21Utils
     properties(Constant)
-        libPath = '/a/home/cc/tree/taucc/students/physics/matanlotem/Work/SIM21/lib/';
-        matrixPath = [SIM21Utils.libPath,'Matrices/'];
+        % Important Paths
+        workPath = '/a/home/cc/tree/taucc/students/physics/matanlotem/Work/SIM21/';
+        paths = struct('work',SIM21Utils.workPath,'code',[SIM21Utils.workPath,'Clean_Fixed/'],...
+                       'lib',[SIM21Utils.workPath,'lib/'],'matrices',[SIM21Utils.workPath,'lib/Matrices/'],...
+                       'dataBackgrounds','/scratch300/matanlotem/DataBackgrounds_withPlanck/',...
+                       'data','/scratch300/matanlotem/Data/','tmpData','/scratch/matanlotem/Data/');
 
-        %Data Matrix settings
-        xHI = struct('z',[6:0.1:15,16:60],'magic','xHI','tmpData',0);
-        TK = struct('z',[5:64],'magic','TK','tmpData',0);
-        T21cm = struct('z',[6:60],'magic','T21cm','tmpData',0);
-        Neut = struct('z',[6:0.1:15,16:60],'magic','Neut','tmpData',0);
-        eps = struct('z',[6:60],'magic','eps','tmpData',1);
-        xe = struct('z',[5:64],'magic','xe','tmpData',1);
-        JLW = struct('z',[6,66],'magic','JLW','tmpData',1);
-        Jalpha = struct('z',[6:60],'magic','Jalpha','tmpData',1);
-        Lion = struct('z',[6:60],'magic','Lion','tmpData',1);
+        % Data Matrix Settings
+        dataTypes = struct('xHI', struct('z',[6:0.1:15,16:60],'magic','xHI','tmpData',0),...
+                           'TK', struct('z',[5:64],'magic','TK','tmpData',0),...
+                           'T21cm', struct('z',[6:60],'magic','T21cm','tmpData',0),...
+                           'Neut', struct('z',[6:0.1:15,16:60],'magic','Neut','tmpData',0),...
+                           'eps', struct('z',[6:60],'magic','eps','tmpData',1),...
+                           'xe', struct('z',[5:64],'magic','xe','tmpData',1),...
+                           'JLW', struct('z',[6,66],'magic','JLW','tmpData',1),...
+                           'Jalpha', struct('z',[6:60],'magic','Jalpha','tmpData',1),...
+                           'Lion', struct('z',[6:60],'magic','Lion','tmpData',1));
 
-        
+        cubeSize = [128,128,128];
     end
     
     methods(Static)
@@ -23,8 +27,13 @@ classdef SIM21Utils
         end
         
         
-        function Mpath = getMatrixPath(MName)
-            Mpath=[SIM21Utils.matrixPath,MName,'.mat'];
+        function MPath = getMatrixPath(MName)
+            if length(MName>4)
+                if isequal(MName(end-3:end),'.mat')
+                    MName = MName(1:end-4)
+                end
+            end
+            MPath=[SIM21Utils.paths.matrices,MName,'.mat'];
         end
         
         
@@ -36,8 +45,16 @@ classdef SIM21Utils
         end
 
 
+        function dataType = getDataType(dataType)
+            if ischar(dataType)
+                dataType = getfield(SIM21Utils.dataTypes,dataType);
+            end
+        end
+
+
         function dataFileName = getDataFileName(c,dataType,z)
             % Get raw data matrix file name
+            dataType = SIM21Utils.getDataType(dataType);
             if ~ dataType.tmpData
                 dataPath = c.dataPath;
             else
@@ -47,28 +64,17 @@ classdef SIM21Utils
         end
 
 
-        function dataMat = getAllData(c,dataType)
-            for z = 1:max(dataType.z)
-                disp(num2str(z));
-                dataMat(z,:,:,:) = zeros(128,128,128);
-                if exist(SIM21Utils.getDataFileName(c,dataType,z)) == 2
-                    dataMat(z,:,:,:) = importdata(SIM21Utils.getDataFileName(c,dataType,z));
-                end
-            end
-        end
-
-
         function compareZ(c1,c2,z)
             disp(['==Checking z=',num2str(z),'==']);            
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.xHI);
-            SIM21Utils.compareMagic(c1,c2,z-1,SIM21Utils.TK);
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.T21cm);
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.Neut);
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.eps);
-            SIM21Utils.compareMagic(c1,c2,z-1,SIM21Utils.xe);
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.JLW);
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.Jalpha);
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.Lion);
+            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.xHI);
+            SIM21Utils.compareMagic(c1,c2,z-1,SIM21Utils.dataTypes.TK);
+            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.T21cm);
+            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.Neut);
+            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.eps);
+            SIM21Utils.compareMagic(c1,c2,z-1,SIM21Utils.dataTypes.xe);
+            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.JLW);
+            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.Jalpha);
+            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.Lion);
         end
         
         

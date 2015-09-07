@@ -21,13 +21,6 @@ classdef SIM21Case < matlab.mixin.Copyable
         ID;
     end
 
-    properties(Constant)
-        baseDataPath = '/scratch300/matanlotem/Data';
-        baseTmpDataPath = '/scratch/matanlotem/Data';
-        codePath = '/a/home/cc/tree/taucc/students/physics/matanlotem/Work/SIM21/Clean_Fixed/';
-        dataBackgrounsPath = '/scratch300/matanlotem/DataBackgrounds_withPlanck/';
-    end
-
 
     methods
         function obj = SIM21Case(name,pathExt,outputPath,ncube,fstar,vbc,vc,fx,sed,tau,feedback,delayParam,pop,fsfunc,phVersion,zeta)
@@ -68,8 +61,8 @@ classdef SIM21Case < matlab.mixin.Copyable
                 end
             end
             obj.pathExt = pathExt;
-            obj.dataPath = [obj.baseDataPath,pathExt];
-            obj.tmpDataPath = [obj.baseTmpDataPath,pathExt];
+            obj.dataPath = [SIM21Utils.paths.data,pathExt];
+            obj.tmpDataPath = [SIM21Utils.paths.tmpData,pathExt];
         end
 
 
@@ -91,10 +84,35 @@ classdef SIM21Case < matlab.mixin.Copyable
         end
 
 
+        function dataMat = getData(obj,dataType,varargin)
+            dataType = SIM21Utils.getDataType(dataType);
+            if nargin==3 % If z-range specifed
+                zs = varargin{1};
+            else % Else - take full z-range
+                zs = dataType.z;
+            end
+
+            % Create empty matrix
+            dataMat = NaN([length(zs),SIM21Utils.cubeSize]);
+
+            % LoadmMatrix for each z if exists
+            for zind = 1:length(zs)
+                fileName = SIM21Utils.getDataFileName(obj,dataType,zs(zind));
+                if exist(fileName) == 2
+                    dataMat(zind,:,:,:) = importdata(fileName);
+                end
+                if mod(zind,10) == 0
+                    disp(['    ',num2str(zind),' / ',num2str(length(zs))]);
+                end
+            end
+            dataMat = squeeze(dataMat);
+        end
+
+
         function runSimulation(obj)
             disp('==Running Full Simulation==');
             curPath = pwd;
-            cd(obj.codePath);
+            cd(SIM21Utils.paths.code);
             RunBackgroundsParam2(obj.pathExt,obj.ncube,obj.fstar,obj.vbc,obj.vc,obj.fx,obj.sed,obj.tau,obj.feedback,obj.delayParam,obj.pop,obj.fsfunc,obj.phVersion,obj.zeta);
             cd(curPath);
         end
@@ -104,7 +122,7 @@ classdef SIM21Case < matlab.mixin.Copyable
             tic;
             disp(['==Running z=',num2str(z),'==']);
             curPath = pwd;
-            cd(obj.codePath);
+            cd(SIM21Utils.paths.code);
 
             global pathname_Data1
             global pathname_Data2
@@ -114,9 +132,9 @@ classdef SIM21Case < matlab.mixin.Copyable
 
             pathname_Data1 = obj.tmpDataPath;
             pathname_Data2 = obj.dataPath;
-            pathname_DataBackgrounds = obj.dataBackgrounsPath;
+            pathname_DataBackgrounds = SIM21Utils.paths.dataBackgrounds;
             ID = obj.ID;
-            delta_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(obj.ncube),'_v.dat'))
+            delta_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(obj.ncube),'_v.dat'));
 
             BackgroundsParamII(z,obj.ncube,obj.fstar,obj.vbc,obj.vc,obj.fx,obj.sed,obj.tau,obj.zeta,obj.feedback,obj.delayParam,obj.pop,obj.fsfunc,~~obj.phVersion,obj.phVersion);
             
