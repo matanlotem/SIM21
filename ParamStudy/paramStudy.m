@@ -107,7 +107,7 @@ classdef paramStudy < handle
             
             for caseNum = obj.workCases
                 disp(caseNum);
-                xHIData = SIM21Analysis.getZData(obj.paramCases(caseNum).c,SIM21Utils.xHI);
+                xHIData = SIM21Analysis.getZData(obj.paramCases(caseNum).c,SIM21Utils.dataTypes.xHI);
                 fxHI = xHIData(2,1);
                 xHIData = [];
                 atau = SIM21Analysis.checkTau(c);
