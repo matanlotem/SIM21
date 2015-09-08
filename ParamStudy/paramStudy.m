@@ -16,7 +16,7 @@ classdef paramStudy < handle
         function obj = paramStudy()
             addpath('/a/home/cc/tree/taucc/students/physics/matanlotem/Work/SIM21/lib/');
             
-            paramDataPath = 'ParamStudy.txt';
+            paramDataPath = 'paramStudy.xlsx';
             cubeNum = 9;
             obj.pathExt = '';
             obj.outputPath = '/scratch300/matanlotem/ParamStudy/';
@@ -35,7 +35,7 @@ classdef paramStudy < handle
 
 
         function paramCases = getCases(obj,paramDataPath,cubeNum)
-            rawData = readtable(paramDataPath,'Delimiter','\t');
+            rawData = readtable(paramDataPath);
             %paramCases = struct();
             for i = 1:height(rawData)
                 caseNum = rawData.CASE(i);
