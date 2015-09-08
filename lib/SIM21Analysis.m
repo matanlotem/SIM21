@@ -3,7 +3,14 @@ classdef SIM21Analysis
         PwSpZ = [6:0.1:15,16:40];
     end
     
-    methods(Static)        
+    methods(Static)
+        function plotAllGraphsByZ(cases)
+            SIM21Analysis.plotGraphsByZ(cases);
+            SIM21Analysis.plotEpsByZ(cases);
+            SIM21Analysis.plotXeByZ(cases);
+        end
+
+
         function plotGraphsByZ(cases)
             % Plot TK, T21cm and xHI Graphs
             SIM21Analysis.plotTKByZ(cases);
@@ -52,7 +59,7 @@ classdef SIM21Analysis
 
 
         function plotXeByZ(cases)
-            xe = SIM21Analysis.dataTypes.xe;
+            xe = SIM21Utils.dataTypes.xe;
             [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,xe,'xe(z)','z+1','xe');
             figSettings.xLim = [min(xe.z),max(xe.z)] + 1;
             figSettings.yLim = [0,1.1];
@@ -92,7 +99,6 @@ classdef SIM21Analysis
             
             % Check if output exists and load
             if exist(dataName, 'file') == 2
-                SIM21Analysis.message('loading data');
                 dataMat=importdata(dataName);
             else
                 % Calculate Mean

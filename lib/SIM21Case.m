@@ -113,33 +113,41 @@ classdef SIM21Case < matlab.mixin.Copyable
             disp('==Running Full Simulation==');
             curPath = pwd;
             cd(SIM21Utils.paths.code);
-            RunBackgroundsParam2(obj.pathExt,obj.ncube,obj.fstar,obj.vbc,obj.vc,obj.fx,obj.sed,obj.tau,obj.feedback,obj.delayParam,obj.pop,obj.fsfunc,obj.phVersion,obj.zeta);
+            try
+                RunBackgroundsParam2(obj.dataPath,obj.tmpDataPath,obj.ncube,obj.fstar,obj.vbc,obj.vc,obj.fx,obj.sed,obj.tau,obj.feedback,obj.delayParam,obj.pop,obj.fsfunc,obj.phVersion,obj.zeta);
+            catch e
+                disp(e.getReport());
+            end
             cd(curPath);
         end
 
 
         function runZ(obj,z)
-            tic;
             disp(['==Running z=',num2str(z),'==']);
             curPath = pwd;
+            tic;
             cd(SIM21Utils.paths.code);
+            try
+                global pathname_Data1
+                global pathname_Data2
+                global pathname_DataBackgrounds
+                global delta_cube
+                global vbc_cube
+                global ID
 
-            global pathname_Data1
-            global pathname_Data2
-            global pathname_DataBackgrounds
-            global delta_cube
-            global ID
+                pathname_Data1 = obj.tmpDataPath;
+                pathname_Data2 = obj.dataPath;
+                pathname_DataBackgrounds = SIM21Utils.paths.dataBackgrounds;
+                ID = obj.ID;
+                delta_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(obj.ncube),'_d.dat'));
+                vbc_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(obj.ncube),'_v.dat'));
 
-            pathname_Data1 = obj.tmpDataPath;
-            pathname_Data2 = obj.dataPath;
-            pathname_DataBackgrounds = SIM21Utils.paths.dataBackgrounds;
-            ID = obj.ID;
-            delta_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(obj.ncube),'_v.dat'));
-
-            BackgroundsParamII(z,obj.ncube,obj.fstar,obj.vbc,obj.vc,obj.fx,obj.sed,obj.tau,obj.zeta,obj.feedback,obj.delayParam,obj.pop,obj.fsfunc,~~obj.phVersion,obj.phVersion);
-            
-            cd(curPath);
+                BackgroundsParamII(z,obj.ncube,obj.fstar,obj.vbc,obj.vc,obj.fx,obj.sed,obj.tau,obj.zeta,obj.feedback,obj.delayParam,obj.pop,obj.fsfunc,~~obj.phVersion,obj.phVersion);
+            catch e
+                disp(e.getReport());
+            end
             toc;
+            cd(curPath);
         end
     end
 end
