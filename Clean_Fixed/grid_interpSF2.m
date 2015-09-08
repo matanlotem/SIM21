@@ -83,7 +83,7 @@ function [fgas,fgasp,fgasMQ,fgasMQp] = grid_interpSF2(flag,flagM,JLW21,z,Ispec,f
         NresM = 45;
         Mass = logspace(log10(1e5),log10(1e11),NresM);% Mass = logspace(log10(1e5),log10(1e10),NresM);
     end
-
+    
     delta_c=1.686-1.686*(1+z)/2000;
     dz = 0.0001;
     g = LWgetDz(z)/LWgetDz(40);%LWgetDz(40) = 0.031880213

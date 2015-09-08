@@ -1,4 +1,3 @@
-
 function xHImean = BackgroundsParamIIResPH(zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Reion,zeta,feedback,p,pop,FSfunc,photoheatingOn,photoheatingVersion)
     global pathname_Data1
     global pathname_Data2
@@ -7,16 +6,9 @@ function xHImean = BackgroundsParamIIResPH(zcenter,ncube,fstar,flag,flagM,XeffTe
     N=length(delta_cube);
 
     load(SIM21Utils.getMatrixPath('Planck_parameters'));
-    %Lpix=3;
+
     zMAX2 = 50;% 60
     Threshold = 1/zeta;
-    %zcenter=9.3
-    % flagM=3
-    % XeffTerm=1
-    % Ispec=1
-    % Reion=1
-    % ncube=0
-
 
     Rset = [linspace(1e-10,500/3,110) logspace(log10(550/3),log10(15000/3),20)];
     Rmin = Rset(1:end-1);
@@ -28,14 +20,10 @@ function xHImean = BackgroundsParamIIResPH(zcenter,ncube,fstar,flag,flagM,XeffTe
 
     %zfgas = 5:100;
     zgas = (6:1:16);
-     
-
 
     if feedback==0
         JLW21 = zeros(N,N,N);
     end
-
-
 
     if(feedback)
         z0 = (1+zcenter)/(min(max(p,0.05),1))^(2/3)-1;
@@ -44,10 +32,6 @@ function xHImean = BackgroundsParamIIResPH(zcenter,ncube,fstar,flag,flagM,XeffTe
 
         % load the LW to calculate the feedback
         for jj=1:2    
-            
-            %load(strcat(pathname_Data1,'JLW_',num2str(zint(jj)),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-            %    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-            %    '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'));% total LyA flux
             load(strcat(pathname_Data1,'JLW_',num2str(zint(jj)),ID,'.mat'));% total LyA flux
             J_interp(jj,:,:,:) = JLW21; 
             JLW21 = [];
@@ -74,9 +58,6 @@ function xHImean = BackgroundsParamIIResPH(zcenter,ncube,fstar,flag,flagM,XeffTe
     if zcenter<40 && photoheatingVersion==2
         zs=[6:0.1:15 16:40];
         q=find(round(zs*10)/10==round(zcenter*10)/10);
-        %load(strcat(pathname_Data2,'xHI_',num2str(zs(q+1)),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-        %                    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),'_',...
-        %                    num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'xHI');
         load(strcat(pathname_Data2,'xHI_',num2str(zs(q+1)),ID,'.mat'),'xHI');
         PrevNeut=logical(xHI>0);
     end
@@ -88,18 +69,8 @@ function xHImean = BackgroundsParamIIResPH(zcenter,ncube,fstar,flag,flagM,XeffTe
 
     xHI = max(0, (1-zeta*fgas).*Neut.*PrevNeut);% ionized fraction of each pixel
     xHImean=mean(mean(mean(xHI)));
-
-    %save(strcat(pathname_Data2,'xHI_',num2str(zcenter),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-    %                        '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-    %                        '_',num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'xHI');
-
-    %save(strcat(pathname_Data2,'Neut_',num2str(zcenter),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-    %                    '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),'_',...
-    %                    num2str(p),'_',num2str(pop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion),'.mat'),'Neut');
     
     save(strcat(pathname_Data2,'xHI_',num2str(zcenter),ID,'.mat'),'xHI');
     save(strcat(pathname_Data2,'Neut_',num2str(zcenter),ID,'.mat'),'Neut');
-
-
 
 end

@@ -8,7 +8,6 @@
 % Vc = 35 km/s heavy halos
 
 function M = LWgetMcubeVc(flag, z, JLW21,Vcirc)
-
     global vbc_cube
     h = 0.6704;
     Oc = 0.12038/h^2;

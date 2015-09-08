@@ -155,8 +155,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                     J_interp(jj,:,:,:) = JLW21; 
                     JLW21 = [];
                 end      
-                JLW21 = squeeze(exp(interp1(zint,log(abs(J_interp)),z0))); 
-               
+                JLW21 = squeeze(exp(interp1(zint,log(abs(J_interp)),z0)));    
             end
             [fgas_z,fgas_zp,fgasMQ_z,fgasMQ_zp] = grid_interpSF2(flag,flagM,feedback*JLW21,zii,Ispec,fstarM,fstarA,FSfunc,photoheatingOn,photoheatingVersion,zeta,1);% fstar inside %Q
                     
