@@ -198,15 +198,15 @@ function [fgas,fgasp,fgasMQ,fgasMQp] = grid_interpSF2(flag,flagM,JLW21,z,Ispec,f
             load(strcat(pathname_DataBackgrounds,'gridM10Sharp_',num2str(z),'.mat'));
             load(strcat(pathname_DataBackgrounds,'gridA10Sharp_',num2str(z),'.mat')); 
             if Ispec>2
-                load(strcat(pathname_DataBackgrounds,'gridM10SharpMQ_',num2str(z),'.mat')); %Q
-                load(strcat(pathname_DataBackgrounds,'gridA10SharpMQ_',num2str(z),'.mat')); %Q
+                load(strcat(pathname_DataBackgrounds,'gridMMQ10Sharp_',num2str(z),'.mat')); %Q
+                load(strcat(pathname_DataBackgrounds,'gridAMQ10Sharp_',num2str(z),'.mat')); %Q
                 %gridMMQ=zeros(size(gridAMQ)); %MQ doesn't form below atomic cooling mass according to Tal Alexander's work
             end  
         end
     end
 
 
-     
+    
     fgasA = exp(interp3(vbc,deltas,Mass,log(gridA),(flag+1e-10)*vbc_cube,...
         max(min(delta_cube*g,0.99*delta_c*ones(size(delta_cube))),-0.99*ones(size(delta_cube))),McubeGM,'linear'));
 
@@ -326,8 +326,8 @@ function [fgas,fgasp,fgasMQ,fgasMQp] = grid_interpSF2(flag,flagM,JLW21,z,Ispec,f
                 load(strcat(pathname_DataBackgrounds,'gridA10Sharp_',num2str(z),'_1.mat'));
                 
                 if Ispec>2
-                    load(strcat(pathname_DataBackgrounds,'gridM10SharpMQ_',num2str(z),'_1.mat')); %Q
-                    load(strcat(pathname_DataBackgrounds,'gridA10SharpMQ_',num2str(z),'_1.mat')); %Q
+                    load(strcat(pathname_DataBackgrounds,'gridMMQ10Sharp_',num2str(z),'_1.mat')); %Q
+                    load(strcat(pathname_DataBackgrounds,'gridAMQ10Sharp_',num2str(z),'_1.mat')); %Q
                     %gridMMQ=zeros(size(gridAMQ)); %MQ doesn't form below atomic cooling mass according to Tal Alexander's work
                 end
             end

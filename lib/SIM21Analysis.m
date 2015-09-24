@@ -11,69 +11,95 @@ classdef SIM21Analysis
         end
 
 
-        function plotGraphsByZ(cases)
+        function plotGraphsByZ(cases,varargin)
             % Plot TK, T21cm and xHI Graphs
-            SIM21Analysis.plotTKByZ(cases);
-            SIM21Analysis.plotT21cmByZ(cases);
-            SIM21Analysis.plotXHIByZ(cases);
+            SIM21Analysis.plotTKByZ(cases,varargin{:});
+            SIM21Analysis.plotT21cmByZ(cases,varargin{:});
+            SIM21Analysis.plotXHIByZ(cases,varargin{:});
         end
         
 
-        function plotTKByZ(cases)
+        function plotTKByZ(cases,varargin)
             TK = SIM21Utils.dataTypes.TK;
-            [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,TK,'TK(z)','z+1','TK');
+            [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,TK,'TK(z)','z+1','TK',varargin{:});
             figSettings.log = 'xy';
             figSettings.xLim = [min(TK.z),max(TK.z)] + 1;
             figSettings.yTick = [3,10,30,100,300,1000,3000,10000];
-            figSettings.lines{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(cat(1,TK.z,SIM21Gets.getTcmb(TK.z))),'TCMB','k',':',0.2);
+            figSettings.plots{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(cat(1,TK.z,SIM21Gets.getTcmb(TK.z))),'TCMB','k',':',0.2);
             SIM21Analysis.plotData(figName,figSettings);
         end
 
 
-        function plotT21cmByZ(cases)
+        function plotT21cmByZ(cases,varargin)
             T21cm = SIM21Utils.dataTypes.T21cm;
-            [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,T21cm,'T21cm(z)','z+1','T21cm');
+            [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,T21cm,'T21cm(z)','z+1','T21cm',varargin{:});
             figSettings.log = 'x';
             figSettings.xLim = [min(T21cm.z),max(T21cm.z)] + 1;
-            figSettings.lines{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(cat(1,T21cm.z,zeros(1,length(T21cm.z)))),'T0','k',':',0.2);
+            figSettings.plots{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(cat(1,T21cm.z,zeros(1,length(T21cm.z)))),'T0','k',':',0.2);
             SIM21Analysis.plotData(figName,figSettings);
         end
 
 
-        function plotXHIByZ(cases)
+        function plotXHIByZ(cases,varargin)
             xHI = SIM21Utils.dataTypes.xHI;
-            [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,xHI,'T21cm(z)','z+1','xHI');
+            [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,xHI,'xHI(z)','z+1','xHI',varargin{:});
             figSettings.xLim = [min(xHI.z),max(xHI.z)] + 1;
             figSettings.yLim = [0,1.1];
             SIM21Analysis.plotData(figName,figSettings);
         end
         
         
-        function plotEpsByZ(cases)
+        function plotEpsByZ(cases,varargin)
             eps = SIM21Utils.dataTypes.eps;
-            [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,eps,'eps(z)','z+1','eps');
+            [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,eps,'eps(z)','z+1','eps',varargin{:});
             figSettings.log = 'y';
             figSettings.yTick = repmat([10],1,13).^[-44:3:-8];
             SIM21Analysis.plotData(figName,figSettings);
         end
 
 
-        function plotXeByZ(cases)
+        function plotXeByZ(cases,varargin)
             xe = SIM21Utils.dataTypes.xe;
-            [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,xe,'xe(z)','z+1','xe');
+            [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,xe,'xe(z)','z+1','xe',varargin{:});
             figSettings.xLim = [min(xe.z),max(xe.z)] + 1;
             figSettings.yLim = [0,1.1];
             SIM21Analysis.plotData(figName,figSettings);
         end
 
+        function plotXeXHIByZ(c)
+            xe = SIM21Utils.dataTypes.xe;
+            xHI = SIM21Utils.dataTypes.xHI;
+            figName = [c.outputPath,'xHI-xe',c.ID,'.png'];
+            figSettings = SIM21Analysis.initFigSettings('xHI & 1-xe',c.name,'z+1','x');
+
+            figSettings.plots{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(SIM21Analysis.getZData(c,xHI)),'xHI');
+            xeData = SIM21Analysis.getZData(c,xe);
+            xe1Data = cat(1,xeData(1,:),1-xeData(2,:));
+            figSettings.plots{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(xe1Data),'1-xe');
+
+            figSettings.xLim = [min(xHI.z),max(xHI.z)] + 1;
+            figSettings.yLim = [0,1.1];
+
+            SIM21Analysis.plotData(figName,figSettings);
+        end
+
         
-        function [figName,figSettings] = initCaseByZFig(cases,dataType,title,xLabel,yLabel)
+        function [figName,figSettings] = initCaseByZFig(cases,dataType,title,xLabel,yLabel,varargin)
             c = cases(end);
-            figSettings = SIM21Analysis.initFigSettings(title,c.name,xLabel,yLabel);
-            for c = cases
-                figSettings.lines{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(SIM21Analysis.getZData(c,dataType)),c.name);
+            if length(varargin)==1
+                figName = varargin{1};
+                add2Title = '';
+            elseif length(varargin) > 1
+                figName = [varargin{1},dataType.magic,'_',varargin{2},'.png'];
+                add2Title = varargin{2};
+            else
+                figName = [c.outputPath,dataType.magic,c.ID,'.png'];
+                add2Title = c.name;
             end
-            figName = [c.outputPath,dataType.magic,c.ID,'.png'];
+            figSettings = SIM21Analysis.initFigSettings(title,add2Title,xLabel,yLabel);
+            for c = cases
+                figSettings.plots{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(SIM21Analysis.getZData(c,dataType)),c.name);
+            end
         end
 
 
@@ -84,7 +110,7 @@ classdef SIM21Analysis
             figSettings.title = [title,add2Title];
             figSettings.xLabel = xLabel;
             figSettings.yLabel = yLabel;
-            figSettings.lines = {};
+            figSettings.plots = {};
         end
         
 
@@ -128,20 +154,28 @@ classdef SIM21Analysis
             f=figure();
             hold on;
             
-            lineNames = {};
-            for figLine = figSettings.lines
-                pline = figLine{1};
-                h = plot(pline.x,pline.y);
-                if isfield(pline,'lineColor')
-                    h.Color = pline.lineColor;
+            plotNames = {};
+            for figPlot = figSettings.plots
+                figPlot = figPlot{1};
+                switch figPlot.type 
+                case 'line'
+                    h = plot(figPlot.x,figPlot.y);
+                    if isfield(figPlot,'lineColor')
+                        h.Color = figPlot.lineColor;
+                    end
+                    if isfield(figPlot,'lineStyle')
+                        h.LineStyle = figPlot.lineStyle;
+                    end
+                    if isfield(figPlot,'lineWidth')
+                        h.LineWidth = figPlot.lineWidth;
+                    end
+                case 'scatter'
+                    h = scatter(figPlot.x,figPlot.y);
+                    if isfield(figPlot,'color')
+                        h.MarkerEdgeColor = figPlot.color;
+                    end
                 end
-                if isfield(pline,'lineStyle')
-                    h.LineStyle = pline.lineStyle;
-                end
-                if isfield(pline,'lineWidth')
-                    h.LineWidth = pline.lineWidth;
-                end
-                lineNames{end+1} = pline.name;
+                plotNames{end+1} = figPlot.name;
             end
             
             ax = gca;
@@ -194,27 +228,39 @@ classdef SIM21Analysis
             end
             
             % Legend
-            legend(lineNames,'Location','bestoutside');
+            legend(plotNames,'Location','bestoutside');
 
             hold off;
             saveas(f,outputName);
         end
 
 
-        function pline = plotLine(XYData,lineName,varargin)
+        function pline = plotLine(XYData,name,lineColor,lineStyle,lineWidth)
             % create line object
+            pline.type = 'line';
             pline.x = XYData(1,:);
             pline.y = XYData(2,:);
-            pline.name = lineName;
-            for argNum = 1:nargin-2
-                switch argNum
-                case 1
-                    pline.lineColor = varargin{argNum};
-                case 2
-                    pline.lineStyle = varargin{argNum};
-                case 3
-                    pline.lineWidth = varargin{argNum};
-                end
+            pline.name = name;
+            if exist('lineColor','var')
+                pline.lineColor = lineColor;
+            end
+            if exist('lineStyle','var')
+                pline.lineStyle = lineStyle;
+            end
+            if exist('lineWidth','var')
+                pline.lineWidth = lineWidth;
+            end
+        end
+
+
+        function pscatter = plotScatter(XYData,name,color)
+            % create line object
+            pscatter.type = 'scatter';
+            pscatter.x = XYData(1,:);
+            pscatter.y = XYData(2,:);
+            pscatter.name = name;
+            if exist('color','var')
+                pscatter.color = color;
             end
         end
 

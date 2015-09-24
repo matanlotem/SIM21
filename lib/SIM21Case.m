@@ -47,10 +47,10 @@ classdef SIM21Case < matlab.mixin.Copyable
         end
 
 
-        function runID = getID(obj)
-            runID = ['_',num2str(obj.ncube),'_',num2str(obj.fstar),'_',num2str(obj.vbc),'_',num2str(obj.vc),'_',num2str(obj.fx),...
-                     '_',num2str(obj.sed),'_',num2str(obj.tau),'_',num2str(obj.feedback),'_',num2str(obj.delayParam),'_',num2str(obj.pop),...
-                     '_',num2str(obj.fsfunc),'_',num2str(obj.phVersion)];
+        function ID = getID(obj)
+            ID = ['_',num2str(obj.ncube),'_',num2str(obj.fstar),'_',num2str(obj.vbc),'_',num2str(obj.vc),'_',num2str(obj.fx),...
+                  '_',num2str(obj.sed),'_',num2str(obj.tau),'_',num2str(obj.feedback),'_',num2str(obj.delayParam),'_',num2str(obj.pop),...
+                  '_',num2str(obj.fsfunc),'_',num2str(obj.phVersion)];
         end
 
 
@@ -84,11 +84,9 @@ classdef SIM21Case < matlab.mixin.Copyable
         end
 
 
-        function dataMat = getData(obj,dataType,varargin)
+        function dataMat = getData(obj,dataType,zs)
             dataType = SIM21Utils.getDataType(dataType);
-            if nargin==3 % If z-range specifed
-                zs = varargin{1};
-            else % Else - take full z-range
+            if ~ exist('zs','var')
                 zs = dataType.z;
             end
 
@@ -110,44 +108,12 @@ classdef SIM21Case < matlab.mixin.Copyable
 
 
         function runSimulation(obj)
-            disp('==Running Full Simulation==');
-            curPath = pwd;
-            cd(SIM21Utils.paths.code);
-            try
-                RunBackgroundsParam2(obj.dataPath,obj.tmpDataPath,obj.ncube,obj.fstar,obj.vbc,obj.vc,obj.fx,obj.sed,obj.tau,obj.feedback,obj.delayParam,obj.pop,obj.fsfunc,obj.phVersion,obj.zeta);
-            catch e
-                disp(e.getReport());
-            end
-            cd(curPath);
+            SIM21Utils.runZ(obj,'');
         end
 
 
         function runZ(obj,z)
-            disp(['==Running z=',num2str(z),'==']);
-            curPath = pwd;
-            tic;
-            cd(SIM21Utils.paths.code);
-            try
-                global pathname_Data1
-                global pathname_Data2
-                global pathname_DataBackgrounds
-                global delta_cube
-                global vbc_cube
-                global ID
-
-                pathname_Data1 = obj.tmpDataPath;
-                pathname_Data2 = obj.dataPath;
-                pathname_DataBackgrounds = SIM21Utils.paths.dataBackgrounds;
-                ID = obj.ID;
-                delta_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(obj.ncube),'_d.dat'));
-                vbc_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(obj.ncube),'_v.dat'));
-
-                BackgroundsParamII(z,obj.ncube,obj.fstar,obj.vbc,obj.vc,obj.fx,obj.sed,obj.tau,obj.zeta,obj.feedback,obj.delayParam,obj.pop,obj.fsfunc,~~obj.phVersion,obj.phVersion);
-            catch e
-                disp(e.getReport());
-            end
-            toc;
-            cd(curPath);
+            SIM21Utils.runZ(obj,'',z);
         end
     end
 end

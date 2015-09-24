@@ -5,7 +5,7 @@ classdef SIM21Utils
         paths = struct('work',SIM21Utils.workPath,'code',[SIM21Utils.workPath,'SIM21/Clean_Fixed/'],...
                        'lib',[SIM21Utils.workPath,'SIM21/lib/'],'matrices',[SIM21Utils.workPath,'SIM21/lib/Matrices/'],...
                        'dataBackgrounds','/scratch300/matanlotem/DataBackgrounds_withPlanck/',...
-                       'data','/scratch300/matanlotem/Data/','tmpData','/scratch/matanlotem/Data/');
+                       'data','/scratch300/matanlotem/Data/','tmpData','/scratch300/matanlotem/TmpData/');
 
         % Data Matrix Settings
         dataTypes = struct('xHI', struct('z',[6:0.1:15,16:60],'magic','xHI','tmpData',0),...
@@ -21,6 +21,7 @@ classdef SIM21Utils
         cubeSize = [128,128,128];
 
         jobs = struct('queName','barkana',...
+                      'nodes','compute-0-62',...
                       'logPath',[SIM21Utils.paths.work,'Logs/']);
     end
     
@@ -41,10 +42,9 @@ classdef SIM21Utils
         
         
         function ID = getID(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayParam,MyPop,FSfunc,photoheatingVersion)
-            ID = ['_' num2str(MyCube)...
-                  '_' num2str(MyStar) '_' num2str(MyVBC) '_' num2str(MyVc)...
-                  '_' num2str(MyFX) '_' num2str(MySED) '_' num2str(MyTau)...
-                  '_' num2str(MyFeed) '_' num2str(DelayParam) '_' num2str(MyPop) '_' num2str(FSfunc) '_' num2str(photoheatingVersion)];
+            ID = ['_',num2str(MyCube),'_',num2str(MyStar),'_',num2str(MyVBC),'_',num2str(MyVc),...
+                  '_',num2str(MyFX),'_',num2str(MySED),'_',num2str(MyTau),'_',num2str(MyFeed),...
+                  '_',num2str(DelayParam),'_',num2str(MyPop),'_',num2str(FSfunc),'_',num2str(photoheatingVersion)];
         end
 
 
@@ -64,39 +64,6 @@ classdef SIM21Utils
                 dataPath = c.tmpDataPath;
             end
             dataFileName = [dataPath,dataType.magic,'_',num2str(z),c.ID,'.mat'];
-        end
-
-
-        function compareZ(c1,c2,z)
-            disp(['==Checking z=',num2str(z),'==']);            
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.xHI);
-            SIM21Utils.compareMagic(c1,c2,z-1,SIM21Utils.dataTypes.TK);
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.T21cm);
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.Neut);
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.eps);
-            SIM21Utils.compareMagic(c1,c2,z-1,SIM21Utils.dataTypes.xe);
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.JLW);
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.Jalpha);
-            SIM21Utils.compareMagic(c1,c2,z,SIM21Utils.dataTypes.Lion);
-        end
-        
-        
-        function compareMagic(c1,c2,z,dataType)
-            if max(find(dataType.z==z))
-                msg = '';
-                a1 = SIM21Utils.getDataFileName(c1,dataType,z);
-                a2 = SIM21Utils.getDataFileName(c2,dataType,z);
-                if exist(a1, 'file') ~= 2
-                    msg = [msg,'No File'];
-                elseif exist(a2, 'file') ~= 2
-                    msg = [msg,'No tmp File'];
-                elseif isequal(importdata(a1),importdata(a2))
-                    msg = [msg,'1'];
-                else
-                    msg = [msg,'0'];
-                end
-                disp(sprintf([dataType.magic,'\t',msg]));
-            end
         end
 
 
@@ -124,14 +91,107 @@ classdef SIM21Utils
         end
 
 
-        function runSimJob(c,jobName)
-            %resources = 'pmem=10gb,pvmem=15gb,nodes=compute-0-66:ppn=1';
-            resources = 'pmem=11gb,pvmem=17gb';
-            simMatlab = ['RunBackgroundsParam2(''',c.dataPath,''',''',c.tmpDataPath,''',',...
-                                               num2str(c.ncube),',',num2str(c.fstar),',',num2str(c.vbc),',',num2str(c.vc),',',...
-                                               num2str(c.fx),',',num2str(c.sed),',',num2str(c.tau),',',num2str(c.feedback),',',num2str(c.delayParam),',',...
-                                               num2str(c.pop),',',num2str(c.fsfunc),',',num2str(c.phVersion),',',num2str(c.zeta),');'];
-            SIM21Utils.sendJob(SIM21Utils.paths.code,jobName,simMatlab,resources)
+        function runSimulation(c,jobName,z)
+            runParameters = [c.ncube,c.fstar,c.vbc,c.vc,c.fx,c.sed,c.tau,c.feedback,c.delayParam,c.pop,c.fsfunc,c.phVersion,c.zeta];
+            if exist('z','var')
+                runParameters = [runParameters,z];
+            end
+
+            % Run from console
+            if isempty(jobName)
+                disp('==Running Full Simulation==');
+
+                curPath = pwd;
+                cd(SIM21Utils.paths.code);
+                try
+                    RunBackgroundsParam3(c.dataPath,c.tmpDataPath,runParameters{:});
+                catch e
+                    disp(e.getReport());
+                end
+                cd(curPath);
+
+            % Run as a separated job             
+            else
+                disp('==Run Simulation Job==');
+
+                resources = 'pmem=11gb,pvmem=17gb';
+                if ~ isequal(SIM21Utils.jobs.nodes,'all')
+                    resources = [resources,',nodes=',SIM21Utils.jobs.nodes];
+                end
+
+                simMatlab = ['RunBackgroundsParam3(''',c.dataPath,''',''',c.tmpDataPath,''',',strjoin(cellfun(@num2str,num2cell(runParameters),'uniformOutput',false),','),');'];
+                SIM21Utils.sendJob(SIM21Utils.paths.code,jobName,simMatlab,resources);
+            end
+        end
+
+
+        function runZ(c,jobName,z)
+            runParameters = [z,c.ncube,c.fstar,c.vbc,c.vc,c.fx,c.sed,c.tau,c.zeta,c.feedback,c.delayParam,c.pop,c.fsfunc,~~c.phVersion,c.phVersion]
+            if exist('z','var')
+                runParameters = [runParameters,z];
+            end
+
+            % Run from console
+            if isempty(jobName)
+                disp(['==Running z=',num2str(z),'==']);
+                curPath = pwd;
+                tic;
+                cd(SIM21Utils.paths.code);
+                try
+                    global pathname_Data1
+                    global pathname_Data2
+                    global pathname_DataBackgrounds
+                    global delta_cube
+                    global vbc_cube
+                    global ID
+
+                    pathname_Data1 = c.tmpDataPath;
+                    pathname_Data2 = c.dataPath;
+                    pathname_DataBackgrounds = SIM21Utils.paths.dataBackgrounds;
+                    ID = c.ID;
+                    delta_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(c.ncube),'_d.dat'));
+                    vbc_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(c.ncube),'_v.dat'));
+
+                    BackgroundsParamII(runParameters{:});
+                catch e
+                    disp(e.getReport());
+                end
+                toc;
+            cd(curPath);
+
+            % Run as a separated job             
+            else
+                disp(['==Run z=',num2str(z),' Job==']);
+
+                resources = 'pmem=11gb,pvmem=17gb';
+                if ~ isequal(SIM21Utils.jobs.nodes,'all')
+                    resources = [resources,',nodes=',SIM21Utils.jobs.nodes];
+                end
+
+                simMatlab = ['global pathname_Data1\n',...
+                             'global pathname_Data2\n',...
+                             'global pathname_DataBackgrounds\n',...
+                             'global delta_cube\n',...
+                             'global vbc_cube\n',...
+                             'global ID\n',...
+         
+                             'pathname_Data1 = ''',c.tmpDataPath,''';\n',...
+                             'pathname_Data2 = ''',c.dataPath,''';\n',...
+                             'pathname_DataBackgrounds = ',SIM21Utils.paths.dataBackgrounds,';\n',...
+                             'ID = ''',c.ID,''';\n',...
+                             'delta_cube=importdata(strcat(pathname_DataBackgrounds,''my'',',num2str(c.ncube),',''_d.dat''));\n',...
+                             'vbc_cube=importdata(strcat(pathname_DataBackgrounds,''my'',',num2str(c.ncube),',''_v.dat''));\n',...
+         
+                             'BackgroundsParamII(',strjoin(cellfun(@num2str,num2cell(runParameters),'uniformOutput',false),','),');'];
+                SIM21Utils.sendJob(SIM21Utils.paths.code,jobName,simMatlab,resources);
+            end
+        end
+
+
+        function flag = isRun(cases)
+            for ind = 1:length(cases)
+                flag(ind) = exist(SIM21Utils.getDataFileName(cases(ind),'xHI',6))==2;
+            end
         end
     end
 end
