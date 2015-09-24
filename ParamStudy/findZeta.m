@@ -97,7 +97,7 @@ classdef findZeta < handle
 
         function runJobs(obj,zetaCases)
             for zetaCase = zetaCases;
-                SIM21Utils.runSimJob(zetaCase.c,zetaCase.runName);
+                SIM21Utils.runSimulation(zetaCase.c,zetaCase.runName);
             end
         end
         function runUnrunJobs(obj,caseNums)
@@ -106,10 +106,14 @@ classdef findZeta < handle
                     zetaCase = obj.getZetaCase(caseNum,zeta);
                     if ~zetaCase.isrun
                         [caseNum,zeta]
-                        SIM21Utils.runSimJob(zetaCase.c,zetaCase.runName);
+                        SIM21Utils.runSimulation(zetaCase.c,zetaCase.runName);
                     end
                 end
             end
+        end
+        function runJob(obj,caseNum,zeta)
+            zetaCase = obj.getZetaCase(caseNum,zeta);
+            SIM21Utils.runSimulation(zetaCase.c,zetaCase.runName);
         end
     end
 end

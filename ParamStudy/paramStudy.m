@@ -18,16 +18,14 @@ classdef paramStudy < handle
             
             paramDataPath = 'paramStudy.xlsx';
             cubeNum = 9;
-            obj.pathExt = '';
+            obj.pathExt = 'paramStudy_';
             obj.outputPath = '/scratch300/matanlotem/ParamStudy/';
             obj.regularCase = [1];
             obj.smallVarCases = [2:33];
-            obj.largeVarCases = [52:65];
-            obj.largeVarCases = [52:65];
-            obj.workCases = [obj.regularCase,obj.smallVarCases,obj.largeVarCases];
-            %obj.workCases = [50,51];
+            obj.largeVarCases = [34:65];
             
             obj.paramCases = obj.getCases(paramDataPath,cubeNum);
+            obj.workCases = obj.areRun([obj.regularCase,obj.smallVarCases,obj.largeVarCases]);
             obj.specialParams = obj.getSpecialParams();
             obj.tempParams = obj.getTempParams();
             %obj.plotSomething3();
@@ -36,28 +34,33 @@ classdef paramStudy < handle
 
         function paramCases = getCases(obj,paramDataPath,cubeNum)
             rawData = readtable(paramDataPath);
-            %paramCases = struct();
             for i = 1:height(rawData)
                 caseNum = rawData.CASE(i);
                 paramCases(caseNum).caseNum = caseNum;
                 caseName = ['Case ',num2str(caseNum)];
-                zeta = char(rawData.Zeta(i));
+                zeta = rawData.Zeta(i);
+
                 if isequal(zeta,'PROBLEM')
                     zeta = NaN;
                     paramCases(caseNum).fxHI = NaN;
                     paramCases(caseNum).atau = NaN;
                     paramCases(caseNum).isgood = false;
                 else
-                    zeta = str2num(zeta);
                     paramCases(caseNum).fxHI = rawData.xHI_z_6_(i);
                     paramCases(caseNum).atau = rawData.tau_1(i);
                     paramCases(caseNum).isgood = true;
                 end
-                paramCases(caseNum).c = SIM21Case(caseName,obj.pathExt,obj.getCaseOutputPath(caseNum),...
+                paramCases(caseNum).c = SIM21Case(caseName,[obj.pathExt,num2str(caseNum)],obj.getCaseOutputPath(caseNum),...
                                                   cubeNum,rawData.fstar(i),rawData.vbc(i),rawData.vc(i),rawData.fx(i),rawData.sed(i),rawData.tau(i),...
                                                   rawData.LWFlag(i),rawData.LWW_s(i),rawData.pop(i),rawData.func(i),rawData.PH(i),zeta);
             end
         end
+
+
+        function runCaseNums = areRun(obj,caseNums)
+            runCaseNums = caseNums(SIM21Utils.isRun([obj.paramCases(caseNums).c]));
+        end
+
         
         
         function specialParams = getSpecialParams(obj)
@@ -110,10 +113,10 @@ classdef paramStudy < handle
                 xHIData = SIM21Analysis.getZData(obj.paramCases(caseNum).c,SIM21Utils.dataTypes.xHI);
                 fxHI = xHIData(2,1);
                 xHIData = [];
-                atau = SIM21Analysis.checkTau(c);
+                atau = SIM21Analysis.checkTau(obj.paramCases(caseNum).c);
                 
                 rowStr = [formatCell(caseNum)                                     ,'\t',...
-                          formatCell(obj.paramCases(caseNum).ID)                  ,'\t',...
+                          formatCell(obj.paramCases(caseNum).c.ID)                ,'\t',...
                           formatCell(obj.specialParams(caseNum).minT21cm.z)       ,'\t',...
                           formatCell(obj.specialParams(caseNum).minT21cm.T)       ,'\t',...
                           formatCell(obj.specialParams(caseNum).maxT21cm.z)       ,'\t',...
@@ -151,10 +154,13 @@ classdef paramStudy < handle
         function plotAllZGraphs(obj)
             for caseNum = obj.workCases
                 disp(caseNum);
-                c = obj.paramCases(caseNum).c;
-                SIM21Analysis.plotGraphsByZ(c);
-                SIM21Analysis.plotEpsByZ(c);
-                SIM21Analysis.plotXeByZ(c);
+                cases = obj.paramCases(1).c;
+                if caseNum ~= 1
+                    cases = [cases,obj.paramCases(caseNum).c];
+                end
+                SIM21Analysis.plotGraphsByZ(cases);
+                SIM21Analysis.plotEpsByZ(cases);
+                SIM21Analysis.plotXeByZ(cases);
             end
         end
         
@@ -174,94 +180,29 @@ classdef paramStudy < handle
             end
         end
 
-        
-        function plotSomething(obj)
-            f=figure();
-            hold on;
-            
-            minSlope = [obj.specialParams.minSlope];
-            scatter([minSlope.z],[minSlope.T],10,'filled');
-            
-            dx = rand(length(minSlope),1)-0.5;
-            dy = rand(length(minSlope),1)-0.5;
-            text([minSlope.z]+dx',[minSlope.T]+dy',cellstr(num2str([1:length(minSlope)]')));
-            
-            hold off;
-            outputName = [obj.outputPath,'Graphs/something.png'];
-            saveas(f,outputName);
-        end
-        
-        
-        function plotSomething2(obj)
-            f=figure();
-            hold on;
-            
-            fstarVals = [0.005,0.015,0.05,0.158,0.5];
-            vcVals = [4.2,16.5,35.5,76.5];
-            fxVals = [0.1,0.16,1,1.58,10];
-            sedVals = [1,2,4,5,6];
-            tauVals = [0.066,0.082,0.098];
-            feedbackFlag = [0,1];
-            fsfuncFlag = [1,2];
-            
-            function drawLine(x,y)
-                plot(x,y);
-            end
-            
-            function attributeVal = setAttribute(vals,attrs,val)
-                ind = find(vals==val);
-                if isempty(ind)
-                    % default case
-                    attributeVal = attrs(end);
-                elseif ind > length(attrs)
-                    % default case
-                    attributeVal = attrs(end);
-                else
-                    attributeVal = attrs(ind);
-                end
-            end
-            
-            
-            for i = obj.workCases
-                faceColor = 'b';
-                edgeColor = 'k';
-                markerShape = 'o';
-                markerSize = 40;
-                lineWidth = 0.5;
-                
-                x = obj.specialParams(i).maxSlope.z;
-                y = obj.specialParams(i).maxSlope.T;
-                
-                %faceColor = setAttribute(tauVals,['r','g','y','b'],obj.paramCases(i).tau);
-                %faceColor = setAttribute(fstarVals,['b','g','y','r','c','b'],obj.paramCases(i).fstar);
-                faceColor = setAttribute(fxVals,['b','g','y','r','c','b'],obj.paramCases(i).fx);
-                %fxVals = [0.1,0.16,1,1.58,10];
-                
-                %markerShape = setAttribute(fxVals,['h','d','o','s','h','o'],obj.paramCases(i).fx);
-                %markerShape = setAttribute(vcVals,['s','h','d','p','o'],obj.paramCases(i).vc);
-                
-                %edgeColor = setAttribute(sedVals,['k','k','m','k'],obj.paramCases(i).sed);
-                %markerSize = obj.specialParams(i).maxSlope.slope;
-                
-                scatter(x,y,markerSize,markerShape,...
-                       'MarkerEdgeColor',edgeColor,...
-                       'MarkerFaceColor',faceColor,...
-                       'LineWidth',lineWidth);
-            end
-            
-            iWorkCases = sum(bsxfun(@eq,[1:65],obj.workCases'));
-            for vcVal = vcVals
-                ind = find([obj.paramCases.vc] == vcVal .* iWorkCases);
-                maxSlope = [obj.specialParams(ind).maxSlope];
-                plot([maxSlope.z],[maxSlope.T]);
-            end
-            
-            hold off;
-            outputName = [obj.outputPath,'Graphs/something2.png'];
-            saveas(f,outputName);
-        end
-        
 
+        function plotXeXHIGraphs(obj)
+            for caseNum = obj.workCases
+                disp(caseNum);
+                SIM21Analysis.plotXeXHIByZ(obj.paramCases(caseNum).c);
+            end
+        end
+
+
+        function plot4CasesZGraphs(obj)
+            outputPath = [obj.outputPath,'Graphs/'];
+            runCasesNum = obj.workCases;
+            for ind = 2:4:length(runCasesNum)
+                disp([1,runCasesNum(ind:min(end,ind+3))]);
+                cases = [obj.paramCases([1,runCasesNum(ind:min(end,ind+3))]).c];
+                name = ['Cases',num2str(runCasesNum(ind)),'-',num2str(runCasesNum(min(end,ind+3)))];
+                SIM21Analysis.plotGraphsByZ(cases,outputPath,name);
+                SIM21Analysis.plotEpsByZ(cases,outputPath,name);
+                SIM21Analysis.plotXeByZ(cases,outputPath,name);
+            end
+        end
+
+        
         function plotSomething3(obj)
             outputPath = [obj.outputPath,'Graphs/'];
             figSettings.xLabel = 'z';
@@ -296,26 +237,24 @@ classdef paramStudy < handle
 
             xfield = {'specialParams','minSlope','z'};
             yfield = {'specialParams','maxSlope','z'};
-            figSettings.title = 'Max Slope - Min Slope - zMax(zMin)';
-            %figSettings.lines = [obj.getLines(xfield,yfield,{'paramCases','vc'})];
-            %figSettings.lines = [obj.getLines(xfield,yfield,{'paramCases','fx'})];
-            figSettings.lines = [obj.getLines(xfield,yfield,{'paramCases','fstar'})];
+            figSettings = SIM21Analysis.initFigSettings('Max Slope - Min Slope - zMax(zMin)','',strjoin(xfield(2:end),'.'),strjoin(yfield(2:end),'.'));
+            figSettings.plots = [figSettings.plots, obj.getLines(xfield,yfield,{'paramCases','c','fstar'})];
             obj.plotSigScatter(xfield,yfield,figSettings,[outputPath,'minMaxSlope.png']);
 
-            figSettings.title = 'Max Slope - vc,fstarVals';
-            xfield = {'paramCases','vc'};
+            xfield = {'paramCases','c','vc'};
             yfield = {'specialParams','maxSlope','z'};
-            figSettings.lines = [obj.getLines(xfield,yfield,{'paramCases','fstar'})];
+            figSettings = SIM21Analysis.initFigSettings('Max Slope - vc,fstarVals','',strjoin(xfield(2:end),'.'),strjoin(yfield(2:end),'.'));
+            figSettings.plots = [figSettings.plots, obj.getLines(xfield,yfield,{'paramCases','c','fstar'})];
             obj.plotSigScatter(xfield,yfield,figSettings,[outputPath,'MaxSlope - vc,fstar.png']);
 
-            figSettings = struct();
-            xfield = {'paramCases','vc'};
+            xfield = {'paramCases','c','vc'};
             yfield = {'tempParams','xHI75_25','zDiff'};
+            figSettings = SIM21Analysis.initFigSettings('xHI75-xHI25 - vc','',strjoin(xfield(2:end),'.'),strjoin(yfield(2:end),'.'));
             obj.plotSigScatter(xfield,yfield,figSettings,[outputPath,'xHI75-xHI25 - vc.png']);
 
-            figSettings = struct();
-            xfield = {'paramCases','fstar'};
+            xfield = {'paramCases','c','fstar'};
             yfield = {'specialParams','maxSlope','z'};
+            figSettings = SIM21Analysis.initFigSettings('maxSlope - fstar','',strjoin(xfield(2:end),'.'),strjoin(yfield(2:end),'.'));
             obj.plotSigScatter(xfield,yfield,figSettings,[outputPath,'maxSlope-fstar.png']);
         end
 
@@ -340,15 +279,13 @@ classdef paramStudy < handle
             indCorr = find(abs(corrs)>corrLevel);
             [row,col] = ind2sub(size(corrs),indCorr);
 
-            outputPath = [obj.outputPath,'Graphs/findcorr',num2str(corrLevel),'_'];
+            outputPath = [obj.outputPath,'Graphs/Correlations/findcorr',num2str(corrLevel),'_'];
             for i = 1:length(row)
                 xfield = corrParams{row(i)};
                 yfield = corrParams{col(i)};
                 xLabel = strjoin(xfield(2:end),'.');
                 yLabel = strjoin(yfield(2:end),'.');
-                figSettings.xLabel = xLabel;
-                figSettings.yLabel = yLabel;
-                figSettings.title = [yLabel,' (',xLabel,') - ',num2str(corrs(indCorr(i)))];
+                figSettings = SIM21Analysis.initFigSettings([yLabel,' (',xLabel,') - ',num2str(corrs(indCorr(i)))],'',xLabel,yLabel);
                 obj.plotSigScatter(xfield,yfield,figSettings,[outputPath,yLabel,'-',xLabel,'.png']);
             end
         end
@@ -359,74 +296,36 @@ classdef paramStudy < handle
             hold on
 
             caseTypes = {obj.regularCase,obj.smallVarCases,obj.largeVarCases};
-            %caseColors = ['r','g','b'];
+            caseColors = {'r','g','b'};
+            scatters = {};
+            caseNames = {'regular','small variation','large variation'};
             for caseType = 1:length(caseTypes)
-                cases = caseTypes{caseType};
-                x = obj.getField(cases,xfield);
-                y = obj.getField(cases,yfield);
-                %scatter(x,y,caseColors(caseType))
-                scatter(x,y)
+                casesNum = caseTypes{caseType};
+                x = obj.getField(casesNum,xfield);
+                y = obj.getField(casesNum,yfield);
+                scatters{caseType} = SIM21Analysis.plotScatter(cat(1,x,y),caseNames{caseType});
             end
-            
-            ax = gca;
-            if isfield(figSettings,'log')
-                if max(figSettings == 'x')
-                    ax.XScale = 'log';
-                end
-                if max(figSettings == 'y')
-                    ax.YScale = 'log';
-                end
-            end
-
-            % Interesting lines (for example zero line)
-            if isfield(figSettings,'lines')
-                for figLine = figSettings.lines
-                    plot(figLine{1}(1,:),figLine{1}(2,:));
-                end
-            end
-
-            % Titles and Labels
-            xLabel = strjoin(xfield(2:end),'.');
-            yLabel = strjoin(yfield(2:end),'.');
-            if isfield(figSettings,'title');
-                title(figSettings.title,'FontSize',18);
-            else
-                title([yLabel,' (',xLabel,')'],'FontSize',18);
-            end
-            if isfield(figSettings,'xLabel');
-                xlabel(figSettings.xLabel,'FontSize',12);
-            else
-                xlabel(xLabel);
-            end
-            if isfield(figSettings,'yLabel');
-                ylabel(figSettings.yLabel,'FontSize',12);
-            else
-                ylabel(yLabel);
-            end
-
-                
-
-            legend('regelur','small variation','large variation','Location','bestoutside');
-
-            saveas(f,outputName);
+            figSettings.plots = [scatters, figSettings.plots];
+            SIM21Analysis.plotData(outputName,figSettings);
         end
 
 
-        function lines = getLines(obj,xfield,yfield,linefield)
-            lineVals = obj.getField(obj.workCases,linefield);
-            uLineVals = unique(lineVals);
-            for i = 1:length(uLineVals)
-                cases = obj.workCases(lineVals==uLineVals(i));
-                lines{i} = cat(1,obj.getField(cases,xfield),obj.getField(cases,yfield));
+        function lines = getLines(obj,xfield,yfield,lineField)
+            lines = {};
+            lineVals = obj.getField(obj.workCases,lineField);
+            for lineVal = unique(lineVals)
+                cases = obj.workCases(lineVals==lineVal);
+                lines{end+1} = SIM21Analysis.plotLine(cat(1,obj.getField(cases,xfield),obj.getField(cases,yfield)),[lineField{end},' = ',num2str(lineVal)]);
             end
         end
 
 
-        function vals = getField(obj,cases,fieldList)
-            vals = zeros(1,length(cases));
+        function vals = getField(obj,casesNum,fieldList)
+            casesNum = obj.areRun(casesNum);
+            vals = zeros(1,length(casesNum));
             for i = 1:length(vals)
                 lst = getfield(obj,fieldList{1});
-                val = lst(cases(i));
+                val = lst(casesNum(i));
 
                 for fieldID = 2:length(fieldList)
                     val = getfield(val,fieldList{fieldID});
