@@ -60,7 +60,6 @@ classdef paramStudy < handle
         function runCaseNums = areRun(obj,caseNums)
             runCaseNums = caseNums(SIM21Utils.isRun([obj.paramCases(caseNums).c]));
         end
-
         
         
         function specialParams = getSpecialParams(obj)
@@ -93,6 +92,7 @@ classdef paramStudy < handle
             for caseNum = obj.workCases
                 tempParams(caseNum).minMaxSlope.zDiff = obj.specialParams(caseNum).maxSlope.z - obj.specialParams(caseNum).minSlope.z;
                 tempParams(caseNum).xHI75_25.zDiff = obj.specialParams(caseNum).xHI75.z - obj.specialParams(caseNum).xHI25.z;
+                tempParams(caseNum).vcFstar = obj.paramCases(caseNum).c.vc * obj.paramCases(caseNum).c.fstar;
             end
         end
         
@@ -190,7 +190,7 @@ classdef paramStudy < handle
 
 
         function plot4CasesZGraphs(obj)
-            outputPath = [obj.outputPath,'Graphs/'];
+            outputPath = [obj.outputPath,'Graphs/Grouped4/'];
             runCasesNum = obj.workCases;
             for ind = 2:4:length(runCasesNum)
                 disp([1,runCasesNum(ind:min(end,ind+3))]);
@@ -202,35 +202,16 @@ classdef paramStudy < handle
             end
         end
 
-        
-        function plotSomething3(obj)
+
+        function plotSomething(obj)
             outputPath = [obj.outputPath,'Graphs/'];
-            figSettings.xLabel = 'z';
-            figSettings.yLabel = 'T';
-            figSettings.title = 'Min T21cm - T(z)';
-            obj.plotSigScatter({'specialParams','minT21cm','z'},{'specialParams','minT21cm','T'},figSettings,[outputPath,'minT21cm.png']);
-            figSettings.title = 'Max T21cm - T(z)';
-            obj.plotSigScatter({'specialParams','maxT21cm','z'},{'specialParams','maxT21cm','T'},figSettings,[outputPath,'maxT21cm.png']);
-
-            figSettings.yLabel = 'Slope';
-            figSettings.title = 'Min Slope - slope(z)';
-            obj.plotSigScatter({'specialParams','minSlope','z'},{'specialParams','minSlope','slope'},figSettings,[outputPath,'minSlope.png']);
-            figSettings.title = 'Max Slope - slope(z)';
-            obj.plotSigScatter({'specialParams','maxSlope','z'},{'specialParams','maxSlope','slope'},figSettings,[outputPath,'maxSlope.png']);
-
-            figSettings.xLabel = 'z Min';
-            figSettings.yLabel = 'z Max';
-            figSettings.title = 'Max T - Min T - zMax(zMin)';
-            obj.plotSigScatter({'specialParams','minT21cm','z'},{'specialParams','maxT21cm','z'},figSettings,[outputPath,'minMaxT21cm.png']);
-            figSettings.title = 'Max Slope - Min Slope - zMax(zMin)';
-            obj.plotSigScatter({'specialParams','minSlope','z'},{'specialParams','maxSlope','z'},figSettings,[outputPath,'minMaxSlope.png']);    
-
-            figSettings.xLabel = 'zeta';
-            figSettings.yLabel = 'xHI50 z';
-            figSettings.title = 'xHI50 Z(zeta)';
-            obj.plotSigScatter({'paramCases','zeta'},{'specialParams','xHI50','z'},figSettings,[outputPath,'xHI50zeta.png']);    
+            xfield = {'specialParams','maxSlope','z'};
+            yfield = {'tempParams','vcFstar'};
+            figSettings = SIM21Analysis.initFigSettings('vc*fstar (maxSlope.z)','',strjoin(xfield(2:end),'.'),strjoin(yfield(2:end),'.'));
+            caseNums = [obj.regularCase,obj.smallVarCases];
+            figSettings.plots = [figSettings.plots, obj.getLines(xfield,yfield,{'paramCases','c','vc'},caseNums)];
+            obj.plotSigScatter(xfield,yfield,figSettings,[outputPath,'vcFstar_maxSlopeZ.png'],caseNums);
         end
-
 
         function plotSomething4(obj)
             outputPath = [obj.outputPath,'Graphs/'];
@@ -291,30 +272,45 @@ classdef paramStudy < handle
         end
 
 
-        function plotSigScatter(obj,xfield,yfield,figSettings,outputName)
+        function plotSigScatter(obj,xfield,yfield,figSettings,outputName,caseNums)
             f=figure();
             hold on
 
             caseTypes = {obj.regularCase,obj.smallVarCases,obj.largeVarCases};
+            caseNames = {'regular','small variation','large variation'};
             caseColors = {'r','g','b'};
             scatters = {};
-            caseNames = {'regular','small variation','large variation'};
-            for caseType = 1:length(caseTypes)
-                casesNum = caseTypes{caseType};
-                x = obj.getField(casesNum,xfield);
-                y = obj.getField(casesNum,yfield);
-                scatters{caseType} = SIM21Analysis.plotScatter(cat(1,x,y),caseNames{caseType});
+
+            for caseTypeNum = 1:length(caseTypes)
+                if ~ exist('caseNums','var')
+                    typeCaseNums = caseTypes{caseTypeNum};
+                else
+                    typeCaseNums = intersect(caseNums,caseTypes{caseTypeNum});
+                end
+                
+                if ~ isempty(typeCaseNums)
+                    x = obj.getField(typeCaseNums,xfield);
+                    y = obj.getField(typeCaseNums,yfield);
+                    scatters{caseTypeNum} = SIM21Analysis.plotScatter(cat(1,x,y),caseNames{caseTypeNum});
+                end
             end
+
             figSettings.plots = [scatters, figSettings.plots];
             SIM21Analysis.plotData(outputName,figSettings);
         end
 
 
-        function lines = getLines(obj,xfield,yfield,lineField)
+        function lines = getLines(obj,xfield,yfield,lineField,caseNums)
+            if ~ exist('caseNums','var')
+                caseNums = obj.workCases;
+            else
+                caseNums = intersect(caseNums,obj.workCases);
+            end
+
             lines = {};
-            lineVals = obj.getField(obj.workCases,lineField);
+            lineVals = obj.getField(caseNums,lineField);
             for lineVal = unique(lineVals)
-                cases = obj.workCases(lineVals==lineVal);
+                cases = caseNums(lineVals==lineVal);
                 lines{end+1} = SIM21Analysis.plotLine(cat(1,obj.getField(cases,xfield),obj.getField(cases,yfield)),[lineField{end},' = ',num2str(lineVal)]);
             end
         end
