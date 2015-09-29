@@ -32,9 +32,7 @@ function xHImean = BackgroundsParamIIResPH(zcenter,ncube,fstar,flag,flagM,XeffTe
 
         % load the LW to calculate the feedback
         for jj=1:2    
-            load(strcat(pathname_Data1,'JLW_',num2str(zint(jj)),ID,'.mat'));% total LyA flux
-            J_interp(jj,:,:,:) = JLW21; 
-            JLW21 = [];
+            J_interp(jj,:,:,:) = importdata([pathname_Data1,'JLW_',num2str(zint(jj)),ID,'.mat']); 
         end      
         JLW21 = squeeze(exp(interp1(zint,log(abs(J_interp)),z0))); 
        
@@ -58,8 +56,7 @@ function xHImean = BackgroundsParamIIResPH(zcenter,ncube,fstar,flag,flagM,XeffTe
     if zcenter<40 && photoheatingVersion==2
         zs=[6:0.1:15 16:40];
         q=find(round(zs*10)/10==round(zcenter*10)/10);
-        load(strcat(pathname_Data2,'xHI_',num2str(zs(q+1)),ID,'.mat'),'xHI');
-        PrevNeut=logical(xHI>0);
+        PrevNeut=logical(importdata([pathname_Data2,'xHI_',num2str(zs(q+1)),ID,'.mat'])>0);
     end
         
     Maxfcoll = max(fgas,Maxfcoll);% adding the pixel

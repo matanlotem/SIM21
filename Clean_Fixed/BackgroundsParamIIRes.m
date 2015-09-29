@@ -37,9 +37,7 @@ function xHImean = BackgroundsParamIIRes(zcenter,ncube,fstar,flag,flagM,XeffTerm
 
                 % load the LW to calculate the feedback
                 for jj=1:2    
-                    load(strcat(pathname_Data1,'JLW_',num2str(zfeed(jj)),ID,'.mat'));
-                    J_interp(jj,:,:,:) = JLW21; 
-                    JLW21 = [];
+                    J_interp(jj,:,:,:) = ([pathname_Data1,'JLW_',num2str(zfeed(jj)),ID,'.mat']);
                 end      
                 JLW21 = squeeze(exp(interp1(zfeed,log(abs(J_interp)),z0))); 
             else
@@ -64,9 +62,7 @@ function xHImean = BackgroundsParamIIRes(zcenter,ncube,fstar,flag,flagM,XeffTerm
 
             % load the LW to calculate the feedback
             for jj=1:2
-                load(strcat(pathname_Data1,'JLW_',num2str(zfeed(jj)),ID,'.mat'));
-                J_interp(jj,:,:,:) = JLW21; 
-                JLW21 = [];
+                J_interp(jj,:,:,:) = importdata([pathname_Data1,'JLW_',num2str(zfeed(jj)),ID,'.mat']);
             end      
             JLW21 = squeeze(exp(interp1(zfeed,log(abs(J_interp)),z0))); 
         else
