@@ -21,7 +21,7 @@ classdef SIM21Utils
         cubeSize = [128,128,128];
 
         jobs = struct('queName','barkana',...
-                      'nodes','compute-0-62',...
+                      'nodes','compute-0-66',...
                       'logPath',[SIM21Utils.paths.work,'Logs/']);
     end
     
@@ -92,7 +92,7 @@ classdef SIM21Utils
 
 
         function runSimulation(c,jobName,z)
-            runParameters = [c.ncube,c.fstar,c.vbc,c.vc,c.fx,c.sed,c.tau,c.feedback,c.delayParam,c.pop,c.fsfunc,c.phVersion,c.zeta];
+            runParameters = {c.ncube,c.fstar,c.vbc,c.vc,c.fx,c.sed,c.tau,c.feedback,c.delayParam,c.pop,c.fsfunc,c.phVersion,c.zeta};
             if exist('z','var')
                 runParameters = [runParameters,z];
             end
@@ -119,20 +119,17 @@ classdef SIM21Utils
                     resources = [resources,',nodes=',SIM21Utils.jobs.nodes];
                 end
 
-                simMatlab = ['RunBackgroundsParam3(''',c.dataPath,''',''',c.tmpDataPath,''',',strjoin(cellfun(@num2str,num2cell(runParameters),'uniformOutput',false),','),');'];
+                simMatlab = ['RunBackgroundsParam3(''',c.dataPath,''',''',c.tmpDataPath,''',',strjoin(cellfun(@num2str,runParameters,'uniformOutput',false),','),');'];
                 SIM21Utils.sendJob(SIM21Utils.paths.code,jobName,simMatlab,resources);
             end
         end
 
 
-        function runZ(c,jobName,z)
-            runParameters = [z,c.ncube,c.fstar,c.vbc,c.vc,c.fx,c.sed,c.tau,c.zeta,c.feedback,c.delayParam,c.pop,c.fsfunc,~~c.phVersion,c.phVersion]
-            if exist('z','var')
-                runParameters = [runParameters,z];
-            end
+        function runZ(c,z,jobName,comp)
+            runParameters = {z,c.ncube,c.fstar,c.vbc,c.vc,c.fx,c.sed,c.tau,c.zeta,c.feedback,c.delayParam,c.pop,c.fsfunc,~~c.phVersion,c.phVersion};
 
             % Run from console
-            if isempty(jobName)
+            if ~ exist('jobName','var')
                 disp(['==Running z=',num2str(z),'==']);
                 curPath = pwd;
                 tic;
@@ -164,7 +161,9 @@ classdef SIM21Utils
                 disp(['==Run z=',num2str(z),' Job==']);
 
                 resources = 'pmem=11gb,pvmem=17gb';
-                if ~ isequal(SIM21Utils.jobs.nodes,'all')
+                if exist('comp','var')
+                    resources = [resources,',nodes=',comp];
+                elseif ~ isequal(SIM21Utils.jobs.nodes,'all')
                     resources = [resources,',nodes=',SIM21Utils.jobs.nodes];
                 end
 
@@ -182,13 +181,14 @@ classdef SIM21Utils
                              'delta_cube=importdata(strcat(pathname_DataBackgrounds,''my'',',num2str(c.ncube),',''_d.dat''));\n',...
                              'vbc_cube=importdata(strcat(pathname_DataBackgrounds,''my'',',num2str(c.ncube),',''_v.dat''));\n',...
          
-                             'BackgroundsParamII(',strjoin(cellfun(@num2str,num2cell(runParameters),'uniformOutput',false),','),');'];
+                             'BackgroundsParamII(',strjoin(cellfun(@num2str,runParameters,'uniformOutput',false),','),');'];
                 SIM21Utils.sendJob(SIM21Utils.paths.code,jobName,simMatlab,resources);
             end
         end
 
 
         function flag = isRun(cases)
+            flag = logical([]);
             for ind = 1:length(cases)
                 flag(ind) = exist(SIM21Utils.getDataFileName(cases(ind),'xHI',6))==2;
             end

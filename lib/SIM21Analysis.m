@@ -157,7 +157,7 @@ classdef SIM21Analysis
             plotNames = {};
             for figPlot = figSettings.plots
                 figPlot = figPlot{1};
-                switch figPlot.type 
+                switch figPlot.type
                 case 'line'
                     h = plot(figPlot.x,figPlot.y);
                     if isfield(figPlot,'lineColor')
@@ -316,7 +316,6 @@ classdef SIM21Analysis
             % Heating Transition: Tcmb = Tk
             TCMBData = SIM21Analysis.interpData(cat(1,SIM21Utils.dataTypes.TK.z,SIM21Gets.getTcmb(SIM21Utils.dataTypes.TK.z)),interpStep);
             THTInd = find(diff(sign(TKData(2,:)-TCMBData(2,:))));
-            specialParams.THT = TKData(:,THTInd);
             specialParams.THT.z = TKData(1,THTInd);
             specialParams.THT.T = TKData(2,THTInd);
             
