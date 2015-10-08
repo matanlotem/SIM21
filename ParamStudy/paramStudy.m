@@ -5,6 +5,7 @@ classdef paramStudy < handle
         regularCase;
         smallVarCases;
         largeVarCases;
+        otherCases;
         workCases;
         specialParams;
         tempParams;
@@ -23,9 +24,10 @@ classdef paramStudy < handle
             obj.regularCase = [1];
             obj.smallVarCases = [2:33];
             obj.largeVarCases = [34:65];
+            obj.otherCases = [66:73];
             
             obj.paramCases = obj.getCases(paramDataPath,cubeNum);
-            obj.workCases = obj.areRun([obj.regularCase,obj.smallVarCases,obj.largeVarCases]);
+            obj.workCases = obj.areRun([obj.regularCase,obj.smallVarCases,obj.largeVarCases,obj.otherCases]);
             obj.specialParams = obj.getSpecialParams();
             obj.tempParams = obj.getTempParams();
             %obj.plotSomething3();
@@ -93,6 +95,7 @@ classdef paramStudy < handle
                 tempParams(caseNum).minMaxSlope.zDiff = obj.specialParams(caseNum).maxSlope.z - obj.specialParams(caseNum).minSlope.z;
                 tempParams(caseNum).xHI75_25.zDiff = obj.specialParams(caseNum).xHI75.z - obj.specialParams(caseNum).xHI25.z;
                 tempParams(caseNum).vcFstar = obj.paramCases(caseNum).c.vc * obj.paramCases(caseNum).c.fstar;
+                tempParams(caseNum).xHI75zNorm = obj.specialParams(caseNum).xHI75.z / obj.paramCases(caseNum).atau;
             end
         end
         
@@ -151,8 +154,13 @@ classdef paramStudy < handle
         end
         
         
-        function plotAllZGraphs(obj)
-            for caseNum = obj.workCases
+        function plotAllZGraphs(obj,caseNums)
+            if exist('caseNums','var')
+                caseNums = intersect(caseNums,obj.workCases);
+            else
+                caseNums = obj.workCases;
+            end
+            for caseNum = caseNums
                 disp(caseNum);
                 cases = obj.paramCases(1).c;
                 if caseNum ~= 1
@@ -271,27 +279,43 @@ classdef paramStudy < handle
             end
         end
 
+        function plotBasicSigScatter(obj,xfield,yfield,outputPath,caseNums)
+            [figSettings,outputName] = initSSFigSettings(obj,xfield,yfield,outputPath);
+            if ~exist('caseNums','var')
+                caseNums = [obj.regularCase,obj.smallVarCases,obj.largeVarCases];
+            end
+            plotSigScatter(obj,xfield,yfield,figSettings,outputName,caseNums);
+        end
+
+
+        function [figSettings,outputName] = initSSFigSettings(obj,xfield,yfield,outputPath,outputNamePrefix)
+            xlabel = strjoin(xfield(2:end),'.');
+            ylabel = strjoin(yfield(2:end),'.');
+            figSettings = SIM21Analysis.initFigSettings([ylabel,'(',xlabel,')'],'',xlabel,ylabel);
+            if ~exist('outputNamePrefix','var')
+                outputNamePrefix = '';
+            end
+            outputName = [outputPath,outputNamePrefix,ylabel,'_',xlabel,'.png'];
+        end
+
 
         function plotSigScatter(obj,xfield,yfield,figSettings,outputName,caseNums)
-            f=figure();
-            hold on
-
-            caseTypes = {obj.regularCase,obj.smallVarCases,obj.largeVarCases};
-            caseNames = {'regular','small variation','large variation'};
-            caseColors = {'r','g','b'};
+            caseTypes = {obj.regularCase,obj.smallVarCases,obj.largeVarCases,obj.otherCases};
+            caseNames = {'regular','small variation','large variation','other'};
+            %caseColors = {'r','g','b','k'};
             scatters = {};
 
             for caseTypeNum = 1:length(caseTypes)
-                if ~ exist('caseNums','var')
-                    typeCaseNums = caseTypes{caseTypeNum};
-                else
+                if exist('caseNums','var')
                     typeCaseNums = intersect(caseNums,caseTypes{caseTypeNum});
+                else
+                    typeCaseNums = caseTypes{caseTypeNum};
                 end
                 
                 if ~ isempty(typeCaseNums)
                     x = obj.getField(typeCaseNums,xfield);
                     y = obj.getField(typeCaseNums,yfield);
-                    scatters{caseTypeNum} = SIM21Analysis.plotScatter(cat(1,x,y),caseNames{caseTypeNum});
+                    scatters = [scatters,SIM21Analysis.plotScatter(cat(1,x,y),caseNames{caseTypeNum})];
                 end
             end
 
