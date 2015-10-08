@@ -7,41 +7,40 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
     global pathname_Data1
     global pathname_Data2
     global ID
-    %Reion = 0.075
+    global delta_cube
+    
     load(SIM21Utils.getMatrixPath('Planck_parameters'));
-    %count = 0
-    %Lpix=3;
+    
     zMAX2 = 60;% start to calculate all radiative backgrounds and 21-cm
     zMAX1 = 65;% start to evolve Tgas and xe
     fstarM = fstar;% 0.1;
-    fstarA = fstar;%0.1;
-    global delta_cube
+    fstarA = fstar;% 0.1;
     N=length(delta_cube);
     JLW21 = zeros(N,N,N);
     Lion = zeros(N,N,N);
     eps = zeros(N,N,N);
     Jalpha = zeros(N,N,N);
 
-
-    %save('test1z.mat','zMAX2');
-
     if(zcenter>zMAX2)
         JLW21=1e-10*ones(N,N,N);
         save([pathname_Data1,'JLW_',num2str(zcenter),ID,'.mat'],'JLW21');
+        %%% MATAN CHANGE - 2015/10/06
+        if zcenter<zMAX1
+            xe = (1.716e-11*zcenter.^3-3.823e-9*zcenter.^2+4.941e-7*zcenter+0.0001056).*ones(N,N,N);
+            TK = (1+zcenter).^2*41.6./(1+45).^2.*ones(N,N,N);
+            save([pathname_Data1,'xe_',num2str(zcenter),ID,'.mat'],'xe');
+            save([pathname_Data2,'TK_',num2str(zcenter),ID,'.mat'],'TK');
+        end
+        %%% END CHANGE
     else
         %-----reionization parameters----------%
         Threshold = 1/zeta;
 
         %------------------------------------------%
-           %save('test2z.mat','zMAX2');
-
-        
-
         xHI_grid =1-[0,10^(-4),10^(-3.3), 10^(-3),10^(-2.6),10^(-2.3),10^(-2),10^(-1.6),10^(-1.3), 10^(-1),0.5,1];%2
-        xe_grid =[10^(-4),10^(-3.3), 10^(-3),10^(-2.6),10^(-2.3),10^(-2)];% mean of the central pixel
-        %zc_grid = 5:100;
-        %Rset_grid = [linspace(1e-10,500/3,110) logspace(log10(550/3),log10(15000/3),20)];
-        %R_grid = 3*(Rset_grid(1:end-1)+Rset_grid(2:end))/2;
+        %%% MATAN CHANGE - 2015/10/06
+        xe_grid =[10^(-4),10^(-3.3), 10^(-3),10^(-2.6),10^(-2.3),10^(-2),10^(-1.6),10^(-1.3), 10^(-1),0.5,0.9,0.99,1];% mean of the central pixel
+        %%% END CHANGE
                  
         IspecNew=Ispec;
         IsXRB=1;    %Q
@@ -62,16 +61,13 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         MQzeta=Om/OmegaMz*Dc/(18*pi^2);
         
         C21 = 27*sqrt(0.15/Om/h^2)*(Ob*h^2/0.023);
-        if(Lpix==3) 
+
+        if Lpix==3
             %%%% LOAD: XCoefMatMQ, LionCoefMatMQ, LyAXCoefMatMQ
             %%%%       LWCoefMat, LyACoefMat,
             %%%%       LionCoefMat, XCoefMat, LyAXCoefMat
             
-            XCoefMatMQ=SIM21Utils.importMatrix('XCoefMatNEW_xHI0212')/5*(MQzeta)^(5/6);%Q
-            LionCoefMatMQ=SIM21Utils.importMatrix('LionCoefMatNEW_xHI0212')/5*(MQzeta)^(5/6);%QMQ
-            LyAXCoefMatMQ=SIM21Utils.importMatrix('LyAXCoefMatNEW_xHI1808')/5*(MQzeta)^(5/6);%Q
-            
-            if(pop==2)
+            if pop == 2
                 LWCoefMat = SIM21Utils.importMatrix('LWCoefMatII');
                 LyACoefMat = SIM21Utils.importMatrix('LyACoefMatII');
             else
@@ -79,17 +75,27 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                 LyACoefMat = SIM21Utils.importMatrix('LyACoefMatIII');
             end
            
-            if(IspecNew == 2)
+            %%% MATAN CHANGE - 2015/10/06 - load new matrices - 160915
+            if IspecNew == 2
                 %----------------old power law SED--------------------------%
-                LionCoefMat = SIM21Utils.importMatrix('LionCoefMat_xHI0212');
-                XCoefMat = SIM21Utils.importMatrix('XCoefMat_xHI0212');
-                LyAXCoefMat = SIM21Utils.importMatrix('LyAXCoefMat_xHI1808');
+                LionCoefMat = SIM21Utils.importMatrix('LionCoefMat_xHI_160915');
+                XCoefMat = SIM21Utils.importMatrix('XCoefMat_xHI_160915');
+                LyAXCoefMat = SIM21Utils.importMatrix('LyAXCoefMat_xHI_160915');
             else
                 %----------------mixed X-ray SED--------------------------%
-                LionCoefMat = IspecNew*SIM21Utils.importMatrix('LionCoefMatNEW_xHI0212')+(1-IspecNew)*SIM21Utils.importMatrix('LionCoefMatNoA_xHI0212');
-                XCoefMat = IspecNew*SIM21Utils.importMatrix('XCoefMatNEW_xHI0212')+(1-IspecNew)*SIM21Utils.importMatrix('XCoefMatNoA_xHI0212');
-                LyAXCoefMat = IspecNew*SIM21Utils.importMatrix('LyAXCoefMatNEW_xHI1808')+(1-IspecNew)*SIM21Utils.importMatrix('LyAXCoefMat_xHI1808');
+                if IspecNew == 1
+                    LionCoefMat = IspecNew * SIM21Utils.importMatrix('LionCoefMatNew_xHI_160915');
+                    XCoefMat = IspecNew * SIM21Utils.importMatrix('XCoefMatNew_xHI_160915');
+                    LyAXCoefMat = IspecNew * SIM21Utils.importMatrix('LyAXCoefMatNew_xHI_160915');
+                else
+                    throw(MException('a:a','Ispec = 0,3 (50%% mixture) not supported'));
+                end
             end
+
+            XCoefMatMQ = SIM21Utils.importMatrix('XCoefMatNEW_xHI_160915')/5*(MQzeta)^(5/6);%Q
+            LionCoefMatMQ = SIM21Utils.importMatrix('LionCoefMatNEW_xHI_160915')/5*(MQzeta)^(5/6);%QMQ
+            LyAXCoefMatMQ = SIM21Utils.importMatrix('LyAXCoefMatNEW_xHI_160915')/5*(MQzeta)^(5/6);%Q
+            %%% END CHANGE
         else
             %%%% LOAD: LWCoefMat, LyACoefMat,
             %%%%       LionCoefMat, XCoefMat, <zeros> LyAXCoefMat
@@ -117,16 +123,16 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
 
         zsM = max(max(SIM21Gets.getzmax(zcenter,2),SIM21Gets.getRtoz(140,zcenter)),65);
         Ind = find(z==zcenter): find(z==ceil(zsM));
+        
         dfdt_matrix = zeros(length(Ind),N,N,N); 
-        if Ispec>2
+        if IsMQ
             dfdtMQ_matrix = zeros(length(Ind),N,N,N); 
         end
-        % fcoll_matrix = zeros(length(Ind),N,N,N);  
         fcoll_matrix = zeros(N,N,N); 
         xe_matrix = zeros(N,N,N); 
         xHI_matrixCurrent=zeros(N,N,N);
-        xHI_matrixTemp = zeros(3,N,N,N); 
-        % Neut_matrix = zeros(length(Ind),N,N,N);
+        xHI_matrixTemp = zeros(3,N,N,N);
+
         for ii= 1:length(Ind)
             zii = z(Ind(ii));
             D = LWgetDz(zii)/D40;
@@ -146,27 +152,17 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                     
             dt = SIM21Gets.getztot(zii+dz)-SIM21Gets.getztot(zii);% [years]    
             dfdt_matrix(ii,:,:,:) = fftn((fgas_zp.*(1+delta_cube*Dp)-fgas_z.*(1+delta_cube*D)).*Lpix^3/dt);% 
-            if Ispec>2
+            if IsMQ
                 dfdtMQ_matrix(ii,:,:,:) = fftn((fgasMQ_zp.*(1+delta_cube*Dp)-fgasMQ_z.*(1+delta_cube*D)).*Lpix^3/dt);%  %Q
             end
             
-            %fcoll_matrix(ii,:,:,:) =fftn(fgas_z/fstar);
             if(ii==1)
                  fcoll_matrix =fftn(fgas_z/fstar);
             end
             fgas_z = [];
             fgas_zp = [];
-            %if(zii>zMAX2)
-            %    xe =  (1.716e-11*zii.^3-3.823e-9*zii.^2+4.941e-7*zii+0.0001056).*ones(N,N,N);
-            %    xe_matrix(ii,:,:,:) =fftn(xe);
-            %else
-            %    load(strcat(pathname_Data1,'xe_',num2str(zii),'_',num2str(ncube),'_',num2str(fstar),'_',num2str(flag),...
-            %            '_',num2str(flagM),'_',num2str(XeffTerm),'_',num2str(Ispec),'_',num2str(Reion),'_',num2str(feedback),...
-            %            '_',num2str(p),'_',num2str(pop),'.mat'));% total LyA flux
-            %    xe_matrix(ii,:,:,:) = fftn(xe);%xe at each pixel at zii
-            %    xe = [];
-            %end
         end
+
         for ii= 1:3
             zii = z(Ind(ii));
             if(zii>zcenter)
@@ -182,10 +178,8 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         xHI_matrixCurrent(:,:,:) =squeeze(interp1(log(1+zextrap(2:3)),xHI_matrixTemp(2:3,:,:,:),log(1+zextrap(1)),'linear','extrap'));
         xHI_matrixTemp=[];
         
-        %count = 1
-        %save('test4z.mat','zMAX2');
         dfdt_interp = zeros(2,N,N,N);
-        xe_interp = zeros(2,N,N,N);  
+        xe_interp = zeros(2,N,N,N);
         xHI_interp = zeros(2,N,N,N);
         Maxfcoll = zeros(N,N,N);
         eps = zeros(N,N,N);
@@ -194,6 +188,10 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         JAX=zeros(N,N,N);
         JA=zeros(N,N,N);
         JLW21=zeros(N,N,N);
+        
+        %%% MATAN CHANGE - 2015/10/06
+        load([pathname_Data1,'xe_',num2str(zcenter),ID,'.mat']);
+        %%% END ChANGE
 
         for ii= 1:Nshells  %integral
             R=Lpix*(Rmin(ii)+Rmax(ii))/2; % comoving radius of ring
@@ -205,7 +203,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                     i_interp=i_interp+1;
                     indZ=find(Ind==find(z==z(iz)));
                     dfdt_interp(i_interp,:,:,:) = LWgetGasShell2(squeeze(dfdt_matrix(indZ,:,:,:)),Rmin(ii),Rmax(ii));% df/dt in [sec^-1] units
-                    if Ispec>2
+                    if IsMQ
                         dfdtMQ_interp(i_interp,:,:,:) = LWgetGasShell2(squeeze(dfdtMQ_matrix(indZ,:,:,:)),Rmin(ii),Rmax(ii));% df/dt in [sec^-1] units %Q
                     end
                    
@@ -213,32 +211,26 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                         xe_matrix(:,:,:) = fftn((1.716e-11*z(iz).^3-3.823e-9*z(iz).^2+4.941e-7*z(iz)+0.0001056).*ones(N,N,N));
                     else
                         xe_matrix(:,:,:) = fftn(importdata([pathname_Data1,'xe_',num2str(z(iz)),ID,'.mat']));%xe at each pixel at zii
-                    end
-                    
+                    end            
                     xe_interp(i_interp,:,:,:) = LWgetGasShell2(squeeze(xe_matrix(:,:,:)),0,Rmax(ii))/(4*pi*Rmax(ii)^3/3); 
-                     
-                     
+                    
                     if z(iz)>zcenter
                         if z(iz)>zMAX2
                             xHI_matrix(:,:,:) = fftn(ones(N,N,N));
                         else
-                            xHI_matrix(:,:,:) =fftn(max(0,min(1,importdata([pathname_Data2,'xHI_',num2str(z(iz)),ID,'.mat']))));
+                            xHI_matrix(:,:,:) = fftn(max(0,min(1,importdata([pathname_Data2,'xHI_',num2str(z(iz)),ID,'.mat']))));
                         end
                     elseif z(iz)==zcenter
-                        xHI_matrix=xHI_matrixCurrent;
+                        xHI_matrix = xHI_matrixCurrent;
                     end
-                    
-                    xHI_interp(i_interp,:,:,:) = LWgetGasShell2(squeeze(xHI_matrix(:,:,:)),0,Rmax(ii))./(4*pi*Rmax(ii)^3/3); 
+                    xHI_interp(i_interp,:,:,:) = LWgetGasShell2(squeeze(xHI_matrix(:,:,:)),0,Rmax(ii))./(4*pi*Rmax(ii)^3/3);
                 end
                 
-                aa=1;
-                xeshell =min(max(xe_grid),max(min(xe_grid),squeeze(interp1(log(1+z(izs-1:izs)),xe_interp,log(1+zshell)))));
-                %mean(mean(mean(xeshell)))
+                xeshell = min(max(xe_grid),max(min(xe_grid),squeeze(interp1(log(1+z(izs-1:izs)),xe_interp,log(1+zshell)))));
                 xHIshell = min(max(xHI_grid),max(min(xHI_grid),squeeze(interp1(log(1+z(izs-1:izs)),xHI_interp,log(1+zshell)))));
-                %mean(mean(mean(xHIshell)))
-                dfdt =squeeze(exp(interp1(log(1+z(izs-1:izs)),log(abs(dfdt_interp)+1e-26),log(1+zshell))));   %dfdt per shell (including the shell volume)
-                dfdtMQ=zeros(size(dfdt));
-                if Ispec>2
+                dfdt = squeeze(exp(interp1(log(1+z(izs-1:izs)),log(abs(dfdt_interp)+1e-26),log(1+zshell))));   %dfdt per shell (including the shell volume)
+                dfdtMQ = zeros(size(dfdt));
+                if IsMQ
                     dfdtMQ =squeeze(exp(interp1(log(1+z(izs-1:izs)),log(abs(dfdtMQ_interp)),log(1+zshell))));   %Q  
                 end
                 
@@ -261,15 +253,16 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                 %-------------reionization------------------% 
                 if(R<70) 
                     fcoll = LWgetGasShell2(fcoll_matrix,0,Rmax(ii))/(4*pi*Rmax(ii)^3/3);
-                    Maxfcoll = max(fcoll,Maxfcoll); 
-                    %mean(mean(mean(Maxfcoll)))
-                    %R
+                    %%% MATAN CHANGE - 2015/10/02
+                    xeR0 = LWgetGasShell2(fftn(xe),0,Rmax(ii))/(4*pi*Rmax(ii)^3/3);
+                    Maxfcoll = max(fcoll+xeR0/zeta,Maxfcoll);
+                    %Maxfcoll = max(fcoll,Maxfcoll);
+                    %%% END CAHNGE
                 end
                 dfdt = [];  
                 fcoll = []; 
             end
         end
-        %save('test5z.mat','zMAX2');
         dfdt_matrix=[];
         dfdt_interp = [];
         fcoll_matrix=[];
@@ -323,11 +316,14 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
             PrevNeut=logical(xHI>0);
         end 
        
-       
+        %%% MATAN CHANGE - 2015/10/06
         fgas = grid_interpSF2(flag,flagM,feedback*JLW21,zcenter,Ispec,fstar,fstar,FSfunc,photoheatingOn,photoheatingVersion,zeta,0)/fstar;
-        Maxfcoll = max(fgas,Maxfcoll);% adding the pixel
+        Maxfcoll = max(fgas+xe/zeta,Maxfcoll);% adding the pixel
+        %Maxfcoll = max(fgas,Maxfcoll);% adding the pixel
         Neut = (Maxfcoll<Threshold);% 1 if neutral, 0 if fully ionized
-        xHI = max(0, (1-zeta*fgas).*Neut.*PrevNeut);% neutral fraction of each pixel (as in 21cmFAST)
+        xHI = max(0,(1-zeta*fgas-xe).*Neut.*PrevNeut);% neutral fraction of each pixel (as in 21cmFAST)
+        %xHI = max(0,(1-zeta*fgas).*Neut.*PrevNeut);% neutral fraction of each pixel (as in 21cmFAST)
+        %%% END CHANGE
 
         save([pathname_Data2,'xHI_',num2str(zcenter),ID,'.mat'],'xHI');
         save([pathname_Data2,'Neut_',num2str(zcenter),ID,'.mat'],'Neut');
@@ -337,21 +333,16 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
     %------------------------------
         load([pathname_Data1,'xe_',num2str(zcenter),ID,'.mat']);
         load([pathname_Data2,'TK_',num2str(zcenter),ID,'.mat']);
-    % count = 2  
-                %save('test6z.mat','zMAX2');
         Ts = SIM21Gets.getTs(TK, zcenter,ncube,fstar,flag,flagM,XeffTerm,Ispec,Reion,feedback,p,pop,FSfunc,photoheatingVersion);
         Ts(Ts==0)=1e-20;   
         deltaTerm = (ones(size(delta_cube))+max(-0.9,min(1,delta_cube*LWgetDz(zcenter)/LWgetDz(40))));
-        %%% MATAN CHANGE - 2015/09/02
-        T21cm = C21*sqrt((1+zcenter)/10).*deltaTerm.*(1-2.725*(1+zcenter)./Ts).*xHI.*(1-xe);
-        %%% END CHANGE
+        T21cm = C21*sqrt((1+zcenter)/10).*deltaTerm.*(1-2.725*(1+zcenter)./Ts).*xHI;
         save([pathname_Data2,'T21cm_',num2str(zcenter),ID,'.mat'],'T21cm');
 
         T21cm=[];
         Ts=[];
         deltaTerm=[];
     end
-    %count = 3
     
     %-----------------------------------------------------------------------%
     %------------ gas temperature and xe -----------------------------------%
@@ -361,7 +352,6 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
              xe = (1.716e-11*zcenter.^3-3.823e-9*zcenter.^2+4.941e-7*zcenter+0.0001056).*ones(N,N,N);
         end
 
-    %save('test7z.mat','zMAX2');
     %--------------Runge-Kutta-----------------------------------------%
 
     %---- step1
@@ -369,9 +359,6 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         x0 = log(1+zcenter);
         A0 = log(1+xe);% at zcenter
         B0 = log(TK);
-        %%% MATAN CHANGE - 2015/09/02
-        PrevTK = TK;
-        %%% END CHANGE
         xe=[];
         TK=[];
         Lion0=Lion;
@@ -413,19 +400,13 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         xe = exp(A2)-1;
         TK = exp(B2);
 
-        %%% MATAN CHANGE - 2015/09/02
-        % Block xe at 100%. If xe reaches 100% keep TK constant (anyway it becomes irellevent)
-        ind1 = find(xe>1);
-        xe(ind1) = 1;
-        TK(ind1) = PrevTK(ind1);
-        PrevTK = [];
+        %%% MATAN CHANGE - 2015/10/06
+        xe = min(max(xe_grid),max(min(xe_grid),xe));
         %%% END CHANGE
         
         save([pathname_Data1,'xe_',num2str(zcenter-1),ID,'.mat'],'xe');
         save([pathname_Data2,'TK_',num2str(zcenter-1),ID,'.mat'],'TK');
-    %
 
-      %  count = 4                  
         TK = [];
         xe = [];
         Lion1=[];
