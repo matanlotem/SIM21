@@ -173,11 +173,13 @@ classdef SIM21Analysis
                     h = scatter(figPlot.x,figPlot.y);
                     if isfield(figPlot,'color')
                         h.MarkerEdgeColor = figPlot.color;
+                    else
+                        h.MarkerEdgeColor = h.CData;
                     end
                 end
                 plotNames{end+1} = figPlot.name;
             end
-            
+
             ax = gca;
 
             % Set logarithmic axes
@@ -226,11 +228,11 @@ classdef SIM21Analysis
             if isfield(figSettings,'yLabel');
                 ylabel(figSettings.yLabel,'FontSize',12);
             end
+            hold off;
             
             % Legend
             legend(plotNames,'Location','bestoutside');
 
-            hold off;
             saveas(f,outputName);
         end
 
