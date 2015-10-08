@@ -8,7 +8,7 @@
 %% + z - The redshift to calculate for.
 %%
 %% To run the tests set DEBUG=1 (define globally)
-function Mcrit = calculateMcritV1changes(directory, filePrefix, zMax, N, z)
+function Mcrit = calculateMcritV1fixed(directory, filePrefix, zMax, N, z)
 
     global DEBUG;
     if isempty(DEBUG)
@@ -20,36 +20,42 @@ function Mcrit = calculateMcritV1changes(directory, filePrefix, zMax, N, z)
                     % , its designed for a single simulation calling this function
     %persistent zIN_ion;
     %if isempty(zIN) || isempty(zIN_ion)
-    zIN = zeros(N,N,N);
-    zIN_ion = false(N,N,N);
+        zIN = zeros(N,N,N);
+       
+        zIN_ion = false(N,N,N);
     %end
+    zs=[60:-1:16 15:-0.1:5];
     %persistent nextZ;
     %if isempty(nextZ)
         nextZ = zMax;
     %end
-    zs=[60:-1:16 15:-0.1:5];
-    if z>=15
-        previousZIndex = zMax-(z+1)+1; % Number of previous z
-    else
-        previousZIndex = round((zMax-(15+1)+1)+(15-z)*10); % Number of previous z
-    end
 
     if z<zMax
+
         %%
         %% Calculate zIN and zIN_ion
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+    if z>=15
+        previousZIndex = zMax-(z+1)+1; % Number of previous z
+    end
+    if z<15
+        previousZIndex = round((zMax-(15+1)+1)+(15-z)*10); % Number of previous z
+    end
         %% Load all saved files up to current z (Not efficient, we
         %% can define xHI globally. But its not terribly slow)
+        
         IonizationHistory=zeros(previousZIndex,N,N,N);
+        ionized=zeros(N,N,N);
+        
         for i=1:previousZIndex
 
             %% Load xHI from file if needed
             load([directory filePrefix num2str(zs(i)) gridInterpKey]);
+            
             IonizationHistory(i,:,:,:) = 1-xHI;
-
+            
             %% ionized: 1 means is the cell is fully ionized, 0 otherwise
-            ionized = logical(xHI==0);
+            ionized = or(logical(xHI==0),ionized);
 
             %% Find the new ionizations:
             %% (all the ones ionized in either zIN_ion or ionized but not both) and
@@ -57,13 +63,14 @@ function Mcrit = calculateMcritV1changes(directory, filePrefix, zMax, N, z)
             zIN_ion_new = xor(zIN_ion,ionized) & ionized;
 
             %% Mark all entries that are ionized
-            zIN_ion = (ionized);
+            %zIN_ion = (ionized);
 
             %% Set newly ionized z as i
-            zIN(zIN_ion_new) = zs(i);
-            NewZ=zeros(N,N,N);
+            zIN(zIN_ion_new) = max(zs(i),zIN(zIN_ion_new)); 
+           
+            just_ionized=zeros(N,N,N);
             if i>2
-        
+                NewZ=zeros(N,N,N);
                 PrevIon=zeros(N,N,N);
                 Prev2Ion=zeros(N,N,N);
                 PrevIon=squeeze(IonizationHistory(i-1,:,:,:));
@@ -71,30 +78,19 @@ function Mcrit = calculateMcritV1changes(directory, filePrefix, zMax, N, z)
 
                 %NewZ=squeeze(10.^interp1(log10(interp_ion+1e-60),log10([zs(i-1),zs(i-2)]),log10(ones(N,N,N)),'linear','extrap'));
                 NewZ=10.^(((log10(Prev2Ion)-log10(ones(N,N,N)))*log10(zs(i-1))+(log10(ones(N,N,N))-log10(PrevIon))*log10(zs(i-2)))./(log10(Prev2Ion)-log10(PrevIon)));
-                qq=or(NewZ>zs(i-1)-1e-5,NewZ<z+1e-5);
-                NewZ(qq)=0;
-
+                
+                zIN(zIN_ion_new) = max(zIN(zIN_ion_new), NewZ(zIN_ion_new)); %add
+                
+                if round(z*10)/10==round(zs(i+1)*10)/10
+                    just_ionized = and(~(ionized),and(logical(z<NewZ),logical(NewZ<zs(i))));
+                    zIN(just_ionized) = max(zIN(just_ionized), NewZ(just_ionized));
+                end
             end
 
-            zIN(zIN_ion_new)=max(zIN(zIN_ion_new),NewZ(zIN_ion_new));
-               
-        end
-        if z<58
-            PrevIon=zeros(N,N,N);
-            Prev2Ion=zeros(N,N,N);
-            PrevIon=squeeze(IonizationHistory(previousZIndex,:,:,:));
-            Prev2Ion=squeeze(IonizationHistory(previousZIndex-1,:,:,:));
-            %NewZ=squeeze(10.^interp1(log10(interp_ion+1e-60),log10([zs(i-1),zs(i-2)]),log10(ones(N,N,N)),'linear','extrap'));
-            
-            NewZ=10.^(((log10(Prev2Ion)-log10(ones(N,N,N)))*log10(zs(previousZIndex))+(log10(ones(N,N,N))-log10(PrevIon))*log10(zs(previousZIndex-1)))./(log10(Prev2Ion)-log10(PrevIon)));
-            
-            just_ionized = and(~(ionized),and(logical(z<NewZ),logical(NewZ<zs(previousZIndex))));
-            
-            zIN(just_ionized) = max(zIN(just_ionized), NewZ(just_ionized));
             zIN_ion = or(ionized,just_ionized);
+
         end
-        
-   
+
         %% Start from this z next time
         nextZ = min(z,zMax);
 
