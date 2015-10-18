@@ -1,41 +1,27 @@
 classdef SIM21Testing
     properties(Constant)
+        debugPath = '/scratch300/matanlotem/Temp/';
 	end
 
 	methods(Static)
 		function Test(a,b,c)
-			if exist('a','var')
-				disp(a)
-			end
-			if exist('b','var')
-				disp(b)
-			end
-			if exist('c','var')
-				disp(c)
-			end
-		end
-
-		function Test1(varargin)
-			SIM21Testing.Test(varargin{:});
-		end
-
-		function Test2(a,b)
-			disp(varargin)
+			
 		end
 
 
 		function flag = compareZ(c1,c2,z)
             disp(['==Checking z=',num2str(z),'==']);
-            flag = 1;
-            flag = flag && SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.xHI);
-            flag = flag && SIM21Testing.compareMagic(c1,c2,z-1,SIM21Utils.dataTypes.TK);
-            flag = flag && SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.T21cm);
-            flag = flag && SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.Neut);
-            flag = flag && SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.eps);
-            flag = flag && SIM21Testing.compareMagic(c1,c2,z-1,SIM21Utils.dataTypes.xe);
-            flag = flag && SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.JLW);
-            flag = flag && SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.Jalpha);
-            flag = flag && SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.Lion);
+            flags = [];
+            flags(end+1) = SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.xHI);
+            flags(end+1) = SIM21Testing.compareMagic(c1,c2,z-1,SIM21Utils.dataTypes.TK);
+            flags(end+1) = SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.T21cm);
+            flags(end+1) = SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.Neut);
+            flags(end+1) = SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.eps);
+            flags(end+1) = SIM21Testing.compareMagic(c1,c2,z-1,SIM21Utils.dataTypes.xe);
+            flags(end+1) = SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.JLW);
+            flags(end+1) = SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.Jalpha);
+            flags(end+1) = SIM21Testing.compareMagic(c1,c2,z,SIM21Utils.dataTypes.Lion);
+            flag = min(flags);
         end
         
         
@@ -49,23 +35,26 @@ classdef SIM21Testing
                 if exist(fileName1, 'file') ~= 2
                     msg = [msg,'No File 1 ',fileName1];
                 elseif exist(fileName2, 'file') ~= 2
-                    msg = [msg,'No File 2',fileName2];
+                    msg = [msg,'No File 2 ',fileName2];
                 else
-                	data1 = importdata(fileName1);
-                	data2 = importdata(fileName2);
-                	
-                	diffs1 = data1(data1 ~= data2);
-                	diffs2 = data2(data1 ~= data2);
-                	if isequal(data1,data2)
-                        flag = 1;
-                    elseif ~max(abs((diffs1-diffs2) ./ (diffs1+diffs2)) > 10^-6)
-                        flag = 2;
-                    end
+                    flag = SIM21Testing.compareMat(importdata(fileName1),importdata(fileName2));
                     msg = [msg,num2str(flag)];
                 end
                 disp(sprintf([dataType.magic,'\t',msg]));
             else
                 flag=3;
+            end
+        end
+
+
+        function flag = compareMat(data1,data2)
+            flag = 0;
+            diffs1 = data1(data1 ~= data2);
+            diffs2 = data2(data1 ~= data2);
+            if isequal(data1,data2)
+                flag = 1;
+            elseif ~max(abs((diffs1-diffs2) ./ (diffs1+diffs2)) > 10^-6)
+                flag = 2;
             end
         end
 
@@ -89,6 +78,14 @@ classdef SIM21Testing
                 timings(zs==z) = toc;
             end
             disp(cat(1,zs,res,timings/60));
+        end
+
+
+        function saveDebugMat(matrix,mname)
+            save([SIM21Testing.debugPath,mname,'.mat'],'matrix');
+        end
+        function matrix = loadDebugMat(mname)
+            matrix = importdata([SIM21Testing.debugPath,mname,'.mat']);
         end
 	end
 end

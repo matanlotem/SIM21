@@ -13,7 +13,7 @@ classdef SIM21Utils
                            'T21cm', struct('z',[6:60],'magic','T21cm','tmpData',0),...
                            'Neut', struct('z',[6:0.1:15,16:60],'magic','Neut','tmpData',0),...
                            'eps', struct('z',[6:60],'magic','eps','tmpData',1),...
-                           'xe', struct('z',[5:64],'magic','xe','tmpData',1),...
+                           'xe', struct('z',[5:60],'magic','xe','tmpData',1),...
                            'JLW', struct('z',[6,66],'magic','JLW','tmpData',1),...
                            'Jalpha', struct('z',[6:60],'magic','Jalpha','tmpData',1),...
                            'Lion', struct('z',[6:60],'magic','Lion','tmpData',1));
@@ -21,7 +21,7 @@ classdef SIM21Utils
         cubeSize = [128,128,128];
 
         jobs = struct('queName','barkana',...
-                      'nodes','compute-0-62',...
+                      'nodes','all',...
                       'logPath',[SIM21Utils.paths.work,'Logs/']);
     end
     
@@ -115,8 +115,14 @@ classdef SIM21Utils
                 disp('==Run Simulation Job==');
 
                 resources = 'pmem=11gb,pvmem=17gb';
-                if ~ isequal(SIM21Utils.jobs.nodes,'all')
-                    resources = [resources,',nodes=',SIM21Utils.jobs.nodes];
+
+                global chosenNode
+                if isempty(chosenNode)
+                    chosenNode = SIM21Utils.jobs.nodes;
+                end
+
+                if ~ isequal(chosenNode,'all')
+                    resources = [resources,',nodes=',chosenNode];
                 end
 
                 simMatlab = ['RunBackgroundsParam3(''',c.dataPath,''',''',c.tmpDataPath,''',',strjoin(cellfun(@num2str,runParameters,'uniformOutput',false),','),');'];
@@ -125,7 +131,7 @@ classdef SIM21Utils
         end
 
 
-        function runZ(c,z,jobName,comp)
+        function runZ(c,z,jobName)
             runParameters = {z,c.ncube,c.fstar,c.vbc,c.vc,c.fx,c.sed,c.tau,c.zeta,c.feedback,c.delayParam,c.pop,c.fsfunc,~~c.phVersion,c.phVersion};
 
             % Run from console
@@ -149,7 +155,14 @@ classdef SIM21Utils
                     delta_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(c.ncube),'_d.dat'));
                     vbc_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(c.ncube),'_v.dat'));
 
-                    BackgroundsParamII(runParameters{:});
+                    simFunction = 'BackgroundsParamII';
+                    if floor(z) == z
+                        BackgroundsParamII(runParameters{:});
+                    elseif c.phVersion
+                        BackgroundsParamIIResPH(runParameters{:});
+                    else
+                        BackgroundsParamIIRes(runParameters{:});
+                    end
                 catch e
                     disp(e.getReport());
                 end
@@ -161,12 +174,23 @@ classdef SIM21Utils
                 disp(['==Run z=',num2str(z),' Job==']);
 
                 resources = 'pmem=11gb,pvmem=17gb';
-                if exist('comp','var')
-                    resources = [resources,',nodes=',comp];
-                elseif ~ isequal(SIM21Utils.jobs.nodes,'all')
-                    resources = [resources,',nodes=',SIM21Utils.jobs.nodes];
+                global chosenNode
+                if isempty(chosenNode)
+                    chosenNode = SIM21Utils.jobs.nodes;
                 end
 
+                if ~ isequal(chosenNode,'all')
+                    resources = [resources,',nodes=',chosenNode];
+                end
+
+                simFunction = 'BackgroundsParamII';
+                if floor(z) ~= z
+                    simFunction = [simFunction,'Res'];
+                    if c.phVersion
+                        simFunction = [simFunction,'PH'];
+                    end
+                end
+                
                 simMatlab = ['global pathname_Data1\n',...
                              'global pathname_Data2\n',...
                              'global pathname_DataBackgrounds\n',...
@@ -181,7 +205,7 @@ classdef SIM21Utils
                              'delta_cube=importdata(strcat(pathname_DataBackgrounds,''my'',',num2str(c.ncube),',''_d.dat''));\n',...
                              'vbc_cube=importdata(strcat(pathname_DataBackgrounds,''my'',',num2str(c.ncube),',''_v.dat''));\n',...
          
-                             'BackgroundsParamII(',strjoin(cellfun(@num2str,runParameters,'uniformOutput',false),','),');'];
+                             simFunction,'(',strjoin(cellfun(@num2str,runParameters,'uniformOutput',false),','),');'];
                 SIM21Utils.sendJob(SIM21Utils.paths.code,jobName,simMatlab,resources);
             end
         end

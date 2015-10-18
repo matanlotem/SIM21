@@ -55,7 +55,7 @@ classdef SIM21Case < matlab.mixin.Copyable
 
 
         function setPathExt(obj,pathExt)
-            if ~ isempty(pathExt)
+            if ~isempty(pathExt)
                 if pathExt(end) ~= '/'
                     pathExt = [pathExt,'/'];
                 end
@@ -66,21 +66,16 @@ classdef SIM21Case < matlab.mixin.Copyable
         end
 
 
-        function setOutputPath(obj,newOutputPath,varargin)
-            if newOutputPath(end) ~= '/'
-                newOutputPath = [newOutputPath,'/'];
+        function setOutputPath(obj,newOutputPath)
+            if ~isempty(newOutputPath)
+                if newOutputPath(end) ~= '/'
+                    newOutputPath = [newOutputPath,'/'];
+                end
             end
             if exist(newOutputPath) ~= 7
-                if nargin == 3 && varargin{end}
-
-                    mkdir(newOutputPath);
-                    obj.outputPath = newOutputPath;
-                else
-                    disp (['path doesn''t exist: ',newOutputPath]);
-                end
-            else
-                obj.outputPath = newOutputPath;
+                mkdir(newOutputPath);
             end
+            obj.outputPath = newOutputPath;
         end
 
 
