@@ -26,32 +26,34 @@ classdef findZeta < handle
 
             zetaDataPath = 'findZeta.xlsx';
             rawData = readtable(zetaDataPath);
+            obj.zetaCases = [];
             for zetaInd = 1:height(rawData)
-                zetaCase = obj.initZetaCase(rawData.CASE(zetaInd),rawData.ZETA(zetaInd),rawData.PTAU(zetaInd));
-                if zetaInd == 1
-                    obj.zetaCases = zetaCase;
-                else
-                    obj.zetaCases(zetaInd) = zetaCase;
-                end
+                obj.zetaCases = [obj.zetaCases, obj.initZetaCase(rawData.CASE(zetaInd),rawData.ZETA(zetaInd),rawData.PTAU(zetaInd),rawData.XHI(zetaInd),rawData.TAU(zetaInd))];
             end
         end
 
 
-        function zetaCase = initZetaCase(obj,caseNum,zeta,ptau)
+        function zetaCase = initZetaCase(obj,caseNum,zeta,ptau,finalxHI,tau)
             % set paths
             zetaCase.c = copy(obj.p.paramCases(caseNum).c);
             zetaCase.runName = ['findZeta_',num2str(caseNum),'_',num2str(zeta)];
             zetaCase.c.dataPath = ['/scratch300/matanlotem/Data/',zetaCase.runName,'/'];
             zetaCase.c.tmpDataPath = ['/scratch300/matanlotem/TmpData/',zetaCase.runName,'/'];
-            zetaCase.c.setOutputPath(['/scratch300/matanlotem/ParamStudy/',zetaCase.runName,'/'],1);
+            zetaCase.c.setOutputPath(['/scratch300/matanlotem/ParamStudy/',zetaCase.runName,'/']);
 
             % set properties
             zetaCase.caseNum = caseNum;
             zetaCase.zeta = zeta;
             zetaCase.c.zeta = zeta;
             zetaCase.ptau = ptau;
-            zetaCase.isrun = exist(SIM21Utils.getDataFileName(zetaCase.c,'xHI',6))==2;
-            zetaCase = obj.getZetaResults(zetaCase);
+            if exist('finalxHI','var') && exist('tau','var')
+                zetaCase.isrun = (~isnan(finalxHI)) && (~isnan(tau));
+                zetaCase.tau = tau;
+                zetaCase.finalXHI = finalxHI;
+            else
+                zetaCase.isrun = exist(SIM21Utils.getDataFileName(zetaCase.c,'xHI',6))==2;
+                zetaCase = obj.getZetaResults(zetaCase);
+            end
         end
 
 
