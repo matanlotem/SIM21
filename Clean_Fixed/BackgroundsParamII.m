@@ -21,6 +21,12 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
     eps = zeros(N,N,N);
     Jalpha = zeros(N,N,N);
 
+    %------------------------------------------%
+    xHI_grid =1-[0,10^(-4),10^(-3.3), 10^(-3),10^(-2.6),10^(-2.3),10^(-2),10^(-1.6),10^(-1.3), 10^(-1),0.5,1];%2
+    %%% MATAN CHANGE - 2015/10/06
+    xe_grid =[10^(-4),10^(-3.3), 10^(-3),10^(-2.6),10^(-2.3),10^(-2),10^(-1.6),10^(-1.3), 10^(-1),0.5,0.9,0.99,1];% mean of the central pixel
+    %%% END CHANGE
+             
     if(zcenter>zMAX2)
         JLW21=1e-10*ones(N,N,N);
         save([pathname_Data1,'JLW_',num2str(zcenter),ID,'.mat'],'JLW21');
@@ -36,12 +42,6 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         %-----reionization parameters----------%
         Threshold = 1/zeta;
 
-        %------------------------------------------%
-        xHI_grid =1-[0,10^(-4),10^(-3.3), 10^(-3),10^(-2.6),10^(-2.3),10^(-2),10^(-1.6),10^(-1.3), 10^(-1),0.5,1];%2
-        %%% MATAN CHANGE - 2015/10/06
-        xe_grid =[10^(-4),10^(-3.3), 10^(-3),10^(-2.6),10^(-2.3),10^(-2),10^(-1.6),10^(-1.3), 10^(-1),0.5,0.9,0.99,1];% mean of the central pixel
-        %%% END CHANGE
-                 
         IspecNew=Ispec;
         IsXRB=1;    %Q
         IsMQ=0;    %Q
@@ -84,17 +84,18 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
             else
                 %----------------mixed X-ray SED--------------------------%
                 if IspecNew == 1
-                    LionCoefMat = IspecNew * SIM21Utils.importMatrix('LionCoefMatNew_xHI_160915');
-                    XCoefMat = IspecNew * SIM21Utils.importMatrix('XCoefMatNew_xHI_160915');
-                    LyAXCoefMat = IspecNew * SIM21Utils.importMatrix('LyAXCoefMatNew_xHI_160915');
+                    LionCoefMat = IspecNew * SIM21Utils.importMatrix('LionCoefMatNEW_xHI_160915');
+                    XCoefMat = IspecNew * SIM21Utils.importMatrix('XCoefMatNEW_xHI_160915');
+                    LyAXCoefMat = IspecNew * SIM21Utils.importMatrix('LyAXCoefMatNEW_xHI_160915');
                 else
                     throw(MException('a:a','Ispec = 0,3 (50%% mixture) not supported'));
                 end
             end
-
-            XCoefMatMQ = SIM21Utils.importMatrix('XCoefMatNEW_xHI_160915')/5*(MQzeta)^(5/6);%Q
-            LionCoefMatMQ = SIM21Utils.importMatrix('LionCoefMatNEW_xHI_160915')/5*(MQzeta)^(5/6);%QMQ
-            LyAXCoefMatMQ = SIM21Utils.importMatrix('LyAXCoefMatNEW_xHI_160915')/5*(MQzeta)^(5/6);%Q
+            %%% MATAN CHANGE - 2015/10/13 - change factor from 0.2 to 0.28
+            XCoefMatMQ = SIM21Utils.importMatrix('XCoefMatNEW_xHI_160915')*0.28*(MQzeta)^(5/6);%Q
+            LionCoefMatMQ = SIM21Utils.importMatrix('LionCoefMatNEW_xHI_160915')*0.28*(MQzeta)^(5/6);%QMQ
+            LyAXCoefMatMQ = SIM21Utils.importMatrix('LyAXCoefMatNEW_xHI_160915')*0.28*(MQzeta)^(5/6);%Q
+            %%% END CHANGE
             %%% END CHANGE
         else
             %%%% LOAD: LWCoefMat, LyACoefMat,
@@ -108,8 +109,12 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
             LyAXCoefMat = zeros(96,129,6,12);
         end
         
-        zc = 6:100;
-        z=(6:1:75);
+        %%% MATAN CHANGE - 2015/10/13
+        zc = 5:100;
+        z = 5:75;
+        %zc = 6:100;
+        %z=(6:1:75);
+        %%% END CHANGE
         dz=0.0001;
         zp = z+dz;
 
@@ -149,7 +154,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                 JLW21 = squeeze(exp(interp1(zint,log(abs(J_interp)),z0)));    
             end
             [fgas_z,fgas_zp,fgasMQ_z,fgasMQ_zp] = grid_interpSF2(flag,flagM,feedback*JLW21,zii,Ispec,fstarM,fstarA,FSfunc,photoheatingOn,photoheatingVersion,zeta,1);% fstar inside %Q
-                    
+            
             dt = SIM21Gets.getztot(zii+dz)-SIM21Gets.getztot(zii);% [years]    
             dfdt_matrix(ii,:,:,:) = fftn((fgas_zp.*(1+delta_cube*Dp)-fgas_z.*(1+delta_cube*D)).*Lpix^3/dt);% 
             if IsMQ
@@ -192,7 +197,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         %%% MATAN CHANGE - 2015/10/06
         load([pathname_Data1,'xe_',num2str(zcenter),ID,'.mat']);
         %%% END ChANGE
-
+        
         for ii= 1:Nshells  %integral
             R=Lpix*(Rmin(ii)+Rmax(ii))/2; % comoving radius of ring
             zshell = SIM21Gets.getRtoz(R,zcenter);
@@ -234,7 +239,6 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                     dfdtMQ =squeeze(exp(interp1(log(1+z(izs-1:izs)),log(abs(dfdtMQ_interp)),log(1+zshell))));   %Q  
                 end
                 
-                
                 JA =  JA+dfdt*LyACoefMat(find(zc==zcenter),ii);% 
 
                 eps = eps + IsXRB.*XeffTerm*dfdt.*10.^(interp2(log10(xHI_grid+1e-16),log10(xe_grid+1e-16),log10(squeeze(XCoefMat(find(zc==zcenter),ii,:,:))),log10(squeeze(xHIshell)+1e-16),log10(squeeze(xeshell)+1e-16)))...
@@ -253,7 +257,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                 %-------------reionization------------------% 
                 if(R<70) 
                     fcoll = LWgetGasShell2(fcoll_matrix,0,Rmax(ii))/(4*pi*Rmax(ii)^3/3);
-                    %%% MATAN CHANGE - 2015/10/02
+                    %%% MATAN CHANGE - 2015/10/06
                     xeR0 = LWgetGasShell2(fftn(xe),0,Rmax(ii))/(4*pi*Rmax(ii)^3/3);
                     Maxfcoll = max(fcoll+xeR0/zeta,Maxfcoll);
                     %Maxfcoll = max(fcoll,Maxfcoll);
@@ -272,6 +276,7 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
         xHI_matrix=[];
         xHI_interp=[];
         idfdtshell=[];
+        
         
         %%% MATAN CHANGE - 2015/09/02
         JAX = JAX.*(1+delta_cube.*LWgetDz(zcenter)/LWgetDz(40)).*nb*(1+zcenter)^3*c/(SIM21Gets.getHz(zcenter)*4*pi*nu_a^2*hpl)/(3*10^24)^2;
@@ -388,6 +393,20 @@ function [JLW21] = BackgroundsParamII(zcenter,ncube,fstar,flag,flagM,XeffTerm,Is
                 eps_extrap(indz,:,:,:) = eps;% df/dt in [sec^-1] units    
             end
         end
+
+        %%%
+        %%%Lion_extrap(1,:,:,:) = Lion;
+        %%%eps_extrap(1,:,:,:) = eps;
+        %%%if zcenter+1 > zMAX2
+        %%%    Lion_extrap(2,:,:,:) = zeros(N,N,N);
+        %%%    eps_extrap(2,:,:,:) = zeros(N,N,N);
+        %%%else
+        %%%    Lion_extrap(2,:,:,:) = importdata([pathname_Data1,'Lion_',num2str(zcenter+1),ID,'.mat']);
+        %%%    eps_extrap(2,:,:,:) = importdata([pathname_Data1,'eps_',num2str(zcenter+1),ID,'.mat']);
+        %%%end
+        %%%
+
+
         Lion1 = squeeze(interp1(log10(1+zi), Lion_extrap,log10(1+z1),'linear','extrap'));% extrap Lion at the intermediate step
         eps1 =  squeeze(interp1(log10(1+zi), eps_extrap,log10(1+z1),'linear','extrap'));% extrap Lion at the intermediate step
         Lion_extrap = [];

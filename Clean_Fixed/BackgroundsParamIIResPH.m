@@ -36,17 +36,19 @@ function xHImean = BackgroundsParamIIResPH(zcenter,ncube,fstar,flag,flagM,XeffTe
         JLW21 = zeros(N,N,N);
     end
     [fgas,fgas_zp] = grid_interpSF2(flag,flagM,feedback*JLW21,zcenter,Ispec,fstar,fstar,FSfunc,photoheatingOn,photoheatingVersion,zeta,0);% fstar = 1 gives collapsed fraction
+
     fgas=fgas/fstar;
     fgas_zp=[];
    
     fcoll_matrix = fftn(fgas);
     Maxfcoll = zeros(N,N,N);
     %%% MATAN CHANGE - 2015/10/06
-    xe_interp(1,:,:,:) = importdata([pathname_Data1,'xe_',num2str(floor(zcenter)),ID,'.mat']);
-    xe_interp(2,:,:,:) = importdata([pathname_Data1,'xe_',num2str(floor(zcenter)+1),ID,'.mat']);
+    zint = [floor(zcenter),floor(zcenter)+1];
+    xe_interp(1,:,:,:) = importdata([pathname_Data1,'xe_',num2str(zint(1)),ID,'.mat']);
+    xe_interp(2,:,:,:) = importdata([pathname_Data1,'xe_',num2str(zint(2)),ID,'.mat']);
     xe = min(max(xe_grid),max(min(xe_grid),squeeze(interp1(log(1+zint),xe_interp,log(1+zcenter)))));
     %%% END CHANGE
-
+    
     for ii= 1:Nshells  %integral  
         R=Lpix*(Rmin(ii)+Rmax(ii))/2; % comoving radius of ring
         if R<70
@@ -77,6 +79,6 @@ function xHImean = BackgroundsParamIIResPH(zcenter,ncube,fstar,flag,flagM,XeffTe
 
     xHImean=mean(mean(mean(xHI)));
     
-    save([pathname_Data2,'xHI_',num2str(zcenter),ID,'.mat']),'xHI');
-    save([pathname_Data2,'Neut_',num2str(zcenter),ID,'.mat']),'Neut');
+    save([pathname_Data2,'xHI_',num2str(zcenter),ID,'.mat'],'xHI');
+    save([pathname_Data2,'Neut_',num2str(zcenter),ID,'.mat'],'Neut');
 end

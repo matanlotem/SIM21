@@ -92,7 +92,7 @@ function RunBackgroundsParam2(dataPath,tmpDataPath,MyCube,MyStar,MyVBC,MyVc,MyFX
     if (feedback == 1)
         zMAX = 118;
     else
-        zMAX = 66;
+        zMAX = 61;
     end
     if ~isempty(cell2mat(varargin))
         zMAX = min(varargin{1},zMAX);
