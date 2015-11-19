@@ -48,11 +48,17 @@ classdef SIM21Case < matlab.mixin.Copyable
 
 
         function ID = getID(obj)
-            ID = ['_',num2str(obj.ncube),'_',num2str(obj.fstar),'_',num2str(obj.vbc),'_',num2str(obj.vc),'_',num2str(obj.fx),...
-                  '_',num2str(obj.sed),'_',num2str(obj.tau),'_',num2str(obj.feedback),'_',num2str(obj.delayParam),'_',num2str(obj.pop),...
-                  '_',num2str(obj.fsfunc),'_',num2str(obj.phVersion)];
+            %ID = ['_',num2str(obj.ncube),'_',num2str(obj.fstar),'_',num2str(obj.vbc),'_',num2str(obj.vc),'_',num2str(obj.fx),...
+            %      '_',num2str(obj.sed),'_',num2str(obj.tau),'_',num2str(obj.feedback),'_',num2str(obj.delayParam),'_',num2str(obj.pop),...
+            %      '_',num2str(obj.fsfunc),'_',num2str(obj.phVersion)];
+            ID = obj.newID();
         end
 
+        function ID = newID(obj)
+            ID = ['_',num2str(obj.ncube),'_',num2str(obj.fstar),'_',num2str(obj.vbc),'_',num2str(obj.vc),'_',num2str(obj.fx),...
+                  '_',num2str(obj.sed),'_',num2str(obj.zeta),'_',num2str(obj.feedback),'_',num2str(obj.delayParam),'_',num2str(obj.pop),...
+                  '_',num2str(obj.fsfunc),'_',num2str(obj.phVersion)];
+        end
 
         function setPathExt(obj,pathExt)
             if ~isempty(pathExt)
@@ -103,7 +109,7 @@ classdef SIM21Case < matlab.mixin.Copyable
 
 
         function runSimulation(obj)
-            SIM21Utils.runZ(obj,'');
+            SIM21Utils.runSimulation(obj,obj.pathExt(1:end-1));
         end
 
 

@@ -3,7 +3,8 @@ classdef SIM21Utils
         % Important Paths
         workPath = '/a/home/cc/tree/taucc/students/physics/matanlotem/Work/';
         paths = struct('work',SIM21Utils.workPath,'code',[SIM21Utils.workPath,'SIM21/Clean_Fixed/'],...
-                       'lib',[SIM21Utils.workPath,'SIM21/lib/'],'matrices',[SIM21Utils.workPath,'SIM21/lib/Matrices/'],...
+                       'lib',[SIM21Utils.workPath,'SIM21/lib/'],'bash',[SIM21Utils.workPath,'SIM21/lib/bash/'],...
+                       'matrices',[SIM21Utils.workPath,'SIM21/lib/Matrices/'],...
                        'dataBackgrounds','/scratch300/matanlotem/DataBackgrounds_withPlanck/',...
                        'data','/scratch300/matanlotem/Data/','tmpData','/scratch300/matanlotem/TmpData/');
 
@@ -55,6 +56,13 @@ classdef SIM21Utils
         end
 
 
+        function toInds = matchDataZIndexes(fromInds,fromType,toType)
+            fromType = SIM21Utils.getDataType(fromType);
+            toType = SIM21Utils.getDataType(toType);
+            [tmp,toInds] = ismember(fromType.z(fromInds),toType.z);
+        end
+
+
         function dataFileName = getDataFileName(c,dataType,z)
             % Get raw data matrix file name
             dataType = SIM21Utils.getDataType(dataType);
@@ -92,7 +100,7 @@ classdef SIM21Utils
 
 
         function runSimulation(c,jobName,z)
-            runParameters = {c.ncube,c.fstar,c.vbc,c.vc,c.fx,c.sed,c.tau,c.feedback,c.delayParam,c.pop,c.fsfunc,c.phVersion,c.zeta};
+            runParameters = {c.ncube,c.fstar,c.vbc,c.vc,c.fx,c.sed,c.zeta,c.feedback,c.delayParam,c.pop,c.fsfunc,c.phVersion,c.zeta};
             if exist('z','var')
                 runParameters = [runParameters,z];
             end
@@ -132,7 +140,7 @@ classdef SIM21Utils
 
 
         function runZ(c,z,jobName)
-            runParameters = {z,c.ncube,c.fstar,c.vbc,c.vc,c.fx,c.sed,c.tau,c.zeta,c.feedback,c.delayParam,c.pop,c.fsfunc,~~c.phVersion,c.phVersion};
+            runParameters = {z,c.ncube,c.fstar,c.vbc,c.vc,c.fx,c.sed,c.zeta,c.zeta,c.feedback,c.delayParam,c.pop,c.fsfunc,~~c.phVersion,c.phVersion};
 
             % Run from console
             if ~ exist('jobName','var')
@@ -216,6 +224,26 @@ classdef SIM21Utils
             for ind = 1:length(cases)
                 flag(ind) = exist(SIM21Utils.getDataFileName(cases(ind),'xHI',6))==2;
             end
+        end
+
+
+        function changeID(runCase,newID)
+            system([SIM21Utils.paths.bash, 'changeID.sh ', runCase.dataPath, ' ', runCase.ID, ' ', newID]);
+            system([SIM21Utils.paths.bash, 'changeID.sh ', runCase.tmpDataPath, ' ', runCase.ID, ' ', newID]);
+        end
+
+        function copyCaseData(srcCase,dstCase,mv)
+            cmnd = 'cp';
+            if exist('mv','var')
+                if mv
+                    cmnd = 'mv';
+                end
+            end
+
+            system(['mkdir ', dstCase.dataPath]);
+            system(['mkdir ', dstCase.tmpDataPath]);
+            system([cmnd, ' ', srcCase.dataPath, '*', srcCase.ID, '.mat ', dstCase.dataPath]);
+            system([cmnd, ' ', srcCase.tmpDataPath, '*', srcCase.ID, '.mat ', dstCase.tmpDataPath]);
         end
     end
 end
