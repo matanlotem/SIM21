@@ -7,17 +7,6 @@ classdef findZeta < handle
     methods
         function obj =findZeta(obj)
             obj.initFindZeta();
-            %obj.runJobs(1,[19,20,21]);
-            %obj.runJobs(2,[16,21,31]);
-            %obj.runJobs(3,[31,41,51]);
-            %for caseNum = [10,11,18,19]
-            %for caseNum = [1,2,3]
-            %    for zeta = obj.getZetasByCase(caseNum)
-            %        zetaCase = obj.getZetaCase(caseNum,zeta);
-            %        %obj.runJobs(obj.getZetaCase(caseNum,zeta));
-            %        obj.getZetaResults(zetaCase);
-            %    end
-            %end
         end
 
 
@@ -28,12 +17,12 @@ classdef findZeta < handle
             rawData = readtable(zetaDataPath);
             obj.zetaCases = [];
             for zetaInd = 1:height(rawData)
-                obj.zetaCases = [obj.zetaCases, obj.initZetaCase(rawData.CASE(zetaInd),rawData.ZETA(zetaInd),rawData.PTAU(zetaInd),rawData.XHI(zetaInd),rawData.TAU(zetaInd))];
+                obj.zetaCases = [obj.zetaCases, obj.initZetaCase(rawData.CASE(zetaInd),rawData.ZETA(zetaInd),rawData.PTAU(zetaInd),rawData.XHI(zetaInd),rawData.TAU(zetaInd),rawData.SELECTED(zetaInd))];
             end
         end
 
 
-        function zetaCase = initZetaCase(obj,caseNum,zeta,ptau,finalxHI,tau)
+        function zetaCase = initZetaCase(obj,caseNum,zeta,ptau,finalxHI,tau,selected)
             % set paths
             zetaCase.c = copy(obj.p.paramCases(caseNum).c);
             zetaCase.runName = ['findZeta_',num2str(caseNum),'_',num2str(zeta)];
@@ -46,13 +35,26 @@ classdef findZeta < handle
             zetaCase.zeta = zeta;
             zetaCase.c.zeta = zeta;
             zetaCase.ptau = ptau;
+
+            calcResults = 1;
             if exist('finalxHI','var') && exist('tau','var')
-                zetaCase.isrun = (~isnan(finalxHI)) && (~isnan(tau));
-                zetaCase.tau = tau;
-                zetaCase.finalXHI = finalxHI;
-            else
+                if (~isnan(finalxHI)) && (~isnan(tau))
+                    zetaCase.isrun = 1;
+                    zetaCase.tau = tau;
+                    zetaCase.finalXHI = finalxHI;
+                    calcResults = 0;
+                end
+            end
+            if calcResults
                 zetaCase.isrun = exist(SIM21Utils.getDataFileName(zetaCase.c,'xHI',6))==2;
                 zetaCase = obj.getZetaResults(zetaCase);
+            end
+
+            zetaCase.selected = 0;
+            if exist('selected','var')
+                if selected == 1
+                    zetaCase.selected = 1;
+                end
             end
         end
 
@@ -75,6 +77,7 @@ classdef findZeta < handle
 
         function zetaCase = getZetaResults(obj,zetaCase)
             if zetaCase.isrun
+                disp([zetaCase.caseNum,zetaCase.zeta]);
                 zetaCase.tau = SIM21Analysis.checkTau(zetaCase.c);
                 xHIData = SIM21Analysis.getZData(zetaCase.c,'xHI');
                 zetaCase.finalXHI = xHIData(2,1);
@@ -113,9 +116,27 @@ classdef findZeta < handle
                 end
             end
         end
-        function runJob(obj,caseNum,zeta)
+        function runJob(obj,caseNum,zeta,z)
             zetaCase = obj.getZetaCase(caseNum,zeta);
-            SIM21Utils.runSimulation(zetaCase.c,zetaCase.runName);
+            if exist('z','var')
+                SIM21Utils.runSimulation(zetaCase.c,zetaCase.runName,z);
+            else
+                SIM21Utils.runSimulation(zetaCase.c,zetaCase.runName);
+            end
+        end
+
+
+        function copyZetaCase(obj,zetaCase,c,mv)
+            cmnd = 'cp';
+            if exist('mv','var')
+                if mv
+                    cmnd = 'mv';
+                end
+            end
+            system(['mkdir ',c.dataPath]);
+            system(['mkdir ',c.tmpDataPath]);
+            system([cmnd,' ',zetaCase.c.dataPath,'* ',c.dataPath]);
+            system([cmnd,' ',zetaCase.c.tmpDataPath,'* ',c.tmpDataPath]);
         end
     end
 end

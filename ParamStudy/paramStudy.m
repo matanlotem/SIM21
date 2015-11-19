@@ -19,12 +19,12 @@ classdef paramStudy < handle
             
             paramDataPath = 'paramStudy.xlsx';
             cubeNum = 9;
-            obj.pathExt = 'paramStudy_';
+            obj.pathExt = 'PS_';
             obj.outputPath = '/scratch300/matanlotem/ParamStudy/';
             obj.regularCase = [1];
             obj.smallVarCases = [2:33];
             obj.largeVarCases = [34:65];
-            obj.otherCases = [66:73];
+            obj.otherCases = [66:69];
             
             obj.paramCases = obj.getCases(paramDataPath,cubeNum);
             obj.workCases = obj.areRun([obj.regularCase,obj.smallVarCases,obj.largeVarCases,obj.otherCases]);
@@ -154,6 +154,18 @@ classdef paramStudy < handle
         end
         
         
+        function plotSanityGraphs(obj,caseNums)
+            if exist('caseNums','var')
+                caseNums = intersect(caseNums,obj.workCases);
+            else
+                caseNums = obj.workCases;
+            end
+            for caseNum = caseNums
+                disp(caseNum);
+                SIM21Analysis.plotSanityGraphs(obj.paramCases(caseNum).c);
+            end
+        end
+
         function plotAllZGraphs(obj,caseNums)
             if exist('caseNums','var')
                 caseNums = intersect(caseNums,obj.workCases);
@@ -197,13 +209,17 @@ classdef paramStudy < handle
         end
 
 
-        function plot4CasesZGraphs(obj)
+        function plot4CasesZGraphs(obj,caseNums)
             outputPath = [obj.outputPath,'Graphs/Grouped4/'];
-            runCasesNum = obj.workCases;
-            for ind = 2:4:length(runCasesNum)
-                disp([1,runCasesNum(ind:min(end,ind+3))]);
-                cases = [obj.paramCases([1,runCasesNum(ind:min(end,ind+3))]).c];
-                name = ['Cases',num2str(runCasesNum(ind)),'-',num2str(runCasesNum(min(end,ind+3)))];
+            if exist('caseNums','var')
+                caseNums = intersect(caseNums,obj.workCases);
+            else
+                caseNums = obj.workCases;
+            end
+            for ind = 2:4:length(caseNums)
+                disp([1,caseNums(ind:min(end,ind+3))]);
+                cases = [obj.paramCases([1,caseNums(ind:min(end,ind+3))]).c];
+                name = ['Cases',num2str(caseNums(ind)),'-',num2str(caseNums(min(end,ind+3)))];
                 SIM21Analysis.plotGraphsByZ(cases,outputPath,name);
                 SIM21Analysis.plotEpsByZ(cases,outputPath,name);
                 SIM21Analysis.plotXeByZ(cases,outputPath,name);
@@ -212,13 +228,15 @@ classdef paramStudy < handle
 
 
         function plotSomething(obj)
-            outputPath = [obj.outputPath,'Graphs/'];
-            xfield = {'specialParams','maxSlope','z'};
-            yfield = {'tempParams','vcFstar'};
-            figSettings = SIM21Analysis.initFigSettings('vc*fstar (maxSlope.z)','',strjoin(xfield(2:end),'.'),strjoin(yfield(2:end),'.'));
-            caseNums = [obj.regularCase,obj.smallVarCases];
-            figSettings.plots = [figSettings.plots, obj.getLines(xfield,yfield,{'paramCases','c','vc'},caseNums)];
-            obj.plotSigScatter(xfield,yfield,figSettings,[outputPath,'vcFstar_maxSlopeZ.png'],caseNums);
+            graphsXY = {{{'specialParams','minSlope','z'},{'specialParams','minSlope','T'}},...
+                        {{'specialParams','maxSlope','z'},{'specialParams','maxSlope','T'}},...
+                        {{'specialParams','minSlope','z'},{'specialParams','minSlope','slope'}},...
+                        {{'specialParams','maxSlope','z'},{'specialParams','maxSlope','slope'}},...
+                        {{'specialParams','minT21cm','z'},{'specialParams','minT21cm','T'}},...
+                        {{'specialParams','maxT21cm','z'},{'specialParams','maxT21cm','T'}}};
+            for xyFields = graphsXY
+                obj.plotBasicSigScatter(xyFields{1}{1},xyFields{1}{2},[obj.outputPath,'Graphs/zT/']);
+            end
         end
 
         function plotSomething4(obj)

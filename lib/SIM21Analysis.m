@@ -43,6 +43,7 @@ classdef SIM21Analysis
         function plotXHIByZ(cases,varargin)
             xHI = SIM21Utils.dataTypes.xHI;
             [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,xHI,'xHI(z)','z+1','xHI',varargin{:});
+            figSettings.log = 'x';
             figSettings.xLim = [min(xHI.z),max(xHI.z)] + 1;
             figSettings.yLim = [0,1.1];
             SIM21Analysis.plotData(figName,figSettings);
@@ -52,7 +53,7 @@ classdef SIM21Analysis
         function plotEpsByZ(cases,varargin)
             eps = SIM21Utils.dataTypes.eps;
             [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,eps,'eps(z)','z+1','eps',varargin{:});
-            figSettings.log = 'y';
+            figSettings.log = 'xy';
             figSettings.yTick = repmat([10],1,13).^[-44:3:-8];
             SIM21Analysis.plotData(figName,figSettings);
         end
@@ -61,6 +62,7 @@ classdef SIM21Analysis
         function plotXeByZ(cases,varargin)
             xe = SIM21Utils.dataTypes.xe;
             [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,xe,'xe(z)','z+1','xe',varargin{:});
+            figSettings.log = 'x';
             figSettings.xLim = [min(xe.z),max(xe.z)] + 1;
             figSettings.yLim = [0,1.1];
             SIM21Analysis.plotData(figName,figSettings);
@@ -71,7 +73,7 @@ classdef SIM21Analysis
             xHI = SIM21Utils.dataTypes.xHI;
             figName = [c.outputPath,'xHI-xe',c.ID,'.png'];
             figSettings = SIM21Analysis.initFigSettings('xHI & 1-xe',c.name,'z+1','x');
-
+            figSettings.log = 'x';
             figSettings.plots{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(SIM21Analysis.getZData(c,xHI)),'xHI');
             xeData = SIM21Analysis.getZData(c,xe);
             xe1Data = cat(1,xeData(1,:),1-xeData(2,:));
@@ -84,6 +86,86 @@ classdef SIM21Analysis
         end
 
         
+        function plotSanityGraphs(c,varargin)
+            f = figure();
+            xHI = SIM21Utils.dataTypes.xHI;
+            xe = SIM21Utils.dataTypes.xe;
+            T21cm = SIM21Utils.dataTypes.T21cm;
+            TK = SIM21Utils.dataTypes.TK;
+            eps = SIM21Utils.dataTypes.eps;
+            
+            xHIData = SIM21Analysis.getZData(c,'xHI');
+            reionZ = xHIData(1,max(find(xHIData(2,:)<0.06)));
+
+            % T21cm
+            [figName,figSettings] = SIM21Analysis.initCaseByZFig(c,T21cm,'T21cm(z)','z+1','T21cm',varargin{:});
+            figSettings.log = 'x';
+            figSettings.plots{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(cat(1,T21cm.z,zeros(1,length(T21cm.z)))),'T0','k',':',0.2);
+
+            figSettings.xLim = [min(T21cm.z),max(T21cm.z)] + 1;
+            figSettings.plots{end+1} = SIM21Analysis.plotLine([reionZ+1,reionZ+1;min(figSettings.plots{1}.y),max(figSettings.plots{1}.y)],'Reion','k','--',0.2);
+            subplot(2,2,1)
+            SIM21Analysis.plotPlot(f,figSettings);
+            title(figSettings.title,'FontSize',12);
+            xlabel(figSettings.xLabel,'FontSize',9);
+            ylabel(figSettings.yLabel,'FontSize',9);
+            legend([]);
+
+            % TK
+            [figName,figSettings] = SIM21Analysis.initCaseByZFig(c,TK,'TK(z)','z+1','TK',varargin{:});
+            figSettings.log = 'xy';
+            figSettings.xLim = [min(TK.z),max(TK.z)] + 1;
+            figSettings.yTick = [3,10,30,100,300,1000,3000,10000];
+            figSettings.plots{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(cat(1,TK.z,SIM21Gets.getTcmb(TK.z))),'TCMB','k',':',0.2);
+
+            figSettings.xLim = [min(T21cm.z),max(T21cm.z)] + 1;
+            figSettings.plots{end+1} = SIM21Analysis.plotLine([reionZ+1,reionZ+1;min(figSettings.plots{1}.y),max(figSettings.plots{1}.y)],'Reion','k','--',0.2);
+            subplot(2,2,2)
+            SIM21Analysis.plotPlot(f,figSettings);
+            title(figSettings.title,'FontSize',12);
+            xlabel(figSettings.xLabel,'FontSize',9);
+            ylabel(figSettings.yLabel,'FontSize',9);
+            legend([]);
+            
+            % xHI-xe
+            figSettings = SIM21Analysis.initFigSettings('xHI & 1-xe (z)','','z+1','x');
+            figSettings.plots{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(SIM21Analysis.getZData(c,xHI)),'xHI');
+            xeData = SIM21Analysis.getZData(c,xe);
+            xe1Data = cat(1,xeData(1,:),1-xeData(2,:));
+            figSettings.plots{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(xe1Data),'1-xe');
+            
+            figSettings.log = 'x';
+            figSettings.xLim = [min(xHI.z),max(xHI.z)] + 1;
+            figSettings.yLim = [0,1.1];
+
+            figSettings.xLim = [min(T21cm.z),max(T21cm.z)] + 1;
+            figSettings.plots{end+1} = SIM21Analysis.plotLine([reionZ+1,reionZ+1;min(figSettings.plots{1}.y),max(figSettings.plots{1}.y)],'Reion','k','--',0.2);
+            subplot(2,2,3)
+            SIM21Analysis.plotPlot(f,figSettings);
+            title(figSettings.title,'FontSize',12);
+            xlabel(figSettings.xLabel,'FontSize',9);
+            ylabel(figSettings.yLabel,'FontSize',9);
+            legend([]);
+
+            % eps
+            [figName,figSettings] = SIM21Analysis.initCaseByZFig(c,eps,'eps(z)','z+1','eps',varargin{:});
+            figSettings.log = 'xy';
+            figSettings.yTick = repmat([10],1,13).^[-44:3:-8];
+
+            figSettings.xLim = [min(T21cm.z),max(T21cm.z)] + 1;
+            figSettings.plots{end+1} = SIM21Analysis.plotLine([reionZ+1,reionZ+1;min(figSettings.plots{1}.y),max(figSettings.plots{1}.y)],'Reion','k','--',0.2);
+            subplot(2,2,4)
+            SIM21Analysis.plotPlot(f,figSettings);
+            title(figSettings.title,'FontSize',12);
+            xlabel(figSettings.xLabel,'FontSize',9);
+            ylabel(figSettings.yLabel,'FontSize',9);
+            legend([]);
+
+            outputName = [c.outputPath,'Sanity-',c.name(6:end),c.ID,'.png'];
+            saveas(f,outputName);
+        end
+
+
         function [figName,figSettings] = initCaseByZFig(cases,dataType,title,xLabel,yLabel,varargin)
             c = cases(end);
             if length(varargin)==1
@@ -148,7 +230,8 @@ classdef SIM21Analysis
             XYData = cat(1,x_i,y_i);
         end
         
-        
+
+
         function plotData(outputName,figSettings)
             % Plot data
             f=figure();
@@ -236,6 +319,89 @@ classdef SIM21Analysis
             saveas(f,outputName);
         end
 
+        function f = plotPlot(f,figSettings)
+            hold on;
+            
+            plotNames = {};
+            for figPlot = figSettings.plots
+                figPlot = figPlot{1};
+                switch figPlot.type
+                case 'line'
+                    h = plot(figPlot.x,figPlot.y);
+                    if isfield(figPlot,'lineColor')
+                        h.Color = figPlot.lineColor;
+                    end
+                    if isfield(figPlot,'lineStyle')
+                        h.LineStyle = figPlot.lineStyle;
+                    end
+                    if isfield(figPlot,'lineWidth')
+                        h.LineWidth = figPlot.lineWidth;
+                    end
+                case 'scatter'
+                    h = scatter(figPlot.x,figPlot.y);
+                    if isfield(figPlot,'color')
+                        h.MarkerEdgeColor = figPlot.color;
+                    else
+                        h.MarkerEdgeColor = h.CData;
+                    end
+                end
+                plotNames{end+1} = figPlot.name;
+            end
+
+            ax = gca;
+
+            % Set logarithmic axes
+            if isfield(figSettings,'log')
+                if max(figSettings.log == 'x')
+                    ax.XScale = 'log';
+                end
+                if max(figSettings.log == 'y')
+                    ax.YScale = 'log';
+                end
+            end
+
+            % Set limits
+            if isfield(figSettings,'xLim')
+                xlim(figSettings.xLim);
+            end
+            if isfield(figSettings,'yLim')
+                ylim(figSettings.yLim);
+            end
+
+            % Set tick marks
+            if isfield(figSettings,'xTick');
+                ax.XTick = figSettings.xTick;
+            else
+                1+1;
+                ax.XTick = floor(min(ax.XLim)/10)*10:10:max(ax.XLim);
+            end
+            if isfield(figSettings,'yTick')
+                ax.YTick = figSettings.yTick;
+            else
+                2+2;
+                numOfYTicks = 5;
+                yhop = (max(ax.YLim)-min(ax.YLim))/numOfYTicks;
+                ymag = 10^floor(log10(yhop));
+                yhop = floor(yhop/ymag)*ymag;
+                ax.YTick = (ceil(min(ax.YLim) / yhop) * yhop):yhop:max(ax.YLim);
+            end
+            
+            % Titles and Labels
+            if isfield(figSettings,'title');
+                title(figSettings.title,'FontSize',18);
+            end
+            if isfield(figSettings,'xLabel');
+                xlabel(figSettings.xLabel,'FontSize',12);
+            end
+            if isfield(figSettings,'yLabel');
+                ylabel(figSettings.yLabel,'FontSize',12);
+            end
+            hold off;
+            
+            % Legend
+            legend(plotNames,'Location','bestoutside');
+        end
+
 
         function pline = plotLine(XYData,name,lineColor,lineStyle,lineWidth)
             % create line object
@@ -271,21 +437,26 @@ classdef SIM21Analysis
             %Calculate interesting parameters for specific run
             SIM21Analysis.message('calculating parameters');
             interpStep=0.001;
+            zMax = 70;
             
             xHIData = SIM21Analysis.interpData(SIM21Analysis.getZData(c,SIM21Utils.dataTypes.xHI),interpStep);
+            xHIZMaxInd = find(xHIData(1,:)==min(max(xHIData(1,:)),zMax));
             TKData = SIM21Analysis.interpData(SIM21Analysis.getZData(c,SIM21Utils.dataTypes.TK),interpStep);
+            TKZMaxInd = find(TKData(1,:)==min(max(TKData(1,:)),zMax));
             T21cmData = SIM21Analysis.interpData(SIM21Analysis.getZData(c,SIM21Utils.dataTypes.T21cm),interpStep);
+            T21cmZMaxInd = max(find(diff(T21cmData(2,:))>0))+1;
+
             
             % MIN / MAX T21cm
-            minT21cmInd = find(T21cmData(2,:)==min(T21cmData(2,:)));
-            maxT21cmInd = find(T21cmData(2,:)==max(T21cmData(2,:)));
+            minT21cmInd = find(T21cmData(2,:)==min(T21cmData(2,1:T21cmZMaxInd)));
+            maxT21cmInd = find(T21cmData(2,:)==max(T21cmData(2,1:T21cmZMaxInd)));
             specialParams.minT21cm.z = T21cmData(1,minT21cmInd);
             specialParams.minT21cm.T = T21cmData(2,minT21cmInd);
             specialParams.maxT21cm.z = T21cmData(1,maxT21cmInd);
             specialParams.maxT21cm.T = T21cmData(2,maxT21cmInd);
             
             % MIN / MAX Slope
-            slope = diff(T21cmData(2,:)) ./ diff(T21cmData(1,:));
+            slope = diff(T21cmData(2,1:T21cmZMaxInd)) ./ diff(T21cmData(1,1:T21cmZMaxInd));
             minSlopeInd = find(slope==min(slope));
             maxSlopeInd = find(slope==max(slope));
             specialParams.minSlope.z = T21cmData(1,minSlopeInd);
@@ -295,24 +466,24 @@ classdef SIM21Analysis
             specialParams.maxSlope.T = T21cmData(2,maxSlopeInd);
             specialParams.maxSlope.slope = slope(maxSlopeInd);
             
-            % MIN TK
-            minTKInd = find(TKData(2,:)==min(TKData(2,:)));
-            specialParams.minTK.z = TKData(1,minTKInd);
-            specialParams.minTK.T = TKData(2,minTKInd);
-
             % X Crossing
-            xCrossInd = find(diff(sign(T21cmData(2,:))));
+            xCrossInd = find(diff(sign(T21cmData(2,1:T21cmZMaxInd))));
             specialParams.xCross.z = T21cmData(1,xCrossInd);
             specialParams.xCross.z1 = max(specialParams.xCross.z); % in case there are several zero crossings
+
+            % MIN TK
+            minTKInd = find(TKData(2,:)==min(TKData(2,1:TKZMaxInd)));
+            specialParams.minTK.z = TKData(1,minTKInd);
+            specialParams.minTK.T = TKData(2,minTKInd);
             
             % xHI Percentage
-            xHI75Ind = find(diff(sign(xHIData(2,:)-0.75)));
+            xHI75Ind = find(diff(sign(xHIData(2,1:xHIZMaxInd)-0.75)));
             specialParams.xHI75.z = xHIData(1,xHI75Ind);
-            xHI50Ind = find(diff(sign(xHIData(2,:)-0.50)));
+            xHI50Ind = find(diff(sign(xHIData(2,1:xHIZMaxInd)-0.50)));
             specialParams.xHI50.z = xHIData(1,xHI50Ind);
-            xHI25Ind = find(diff(sign(xHIData(2,:)-0.25)));
+            xHI25Ind = find(diff(sign(xHIData(2,1:xHIZMaxInd)-0.25)));
             specialParams.xHI25.z = xHIData(1,xHI25Ind);
-            xHI0Ind = max(find(xHIData(2,:)==0));
+            xHI0Ind = max(find(xHIData(2,1:xHIZMaxInd)==0));
             specialParams.xHI0.z = xHIData(1,xHI0Ind);
             
             % Heating Transition: Tcmb = Tk
