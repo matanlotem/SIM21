@@ -35,6 +35,7 @@ classdef findZeta < handle
             zetaCase.zeta = zeta;
             zetaCase.c.zeta = zeta;
             zetaCase.ptau = ptau;
+            zetaCase.c.ID = zetaCase.c.getID();
 
             calcResults = 1;
             if exist('finalxHI','var') && exist('tau','var')

@@ -37,21 +37,22 @@
 p = paramStudy();
 outputPath = [p.outputPath,'Graphs/zT/'];
 caseNums = [p.regularCase,p.smallVarCases,p.largeVarCases];
-xfield = {'specialParams','minSlope','z'};
-yfield = {'specialParams','minSlope','T'};
-[figSettings,outputName] = p.initSSFigSettings(xfield,yfield,outputPath,'vc_');
+xfield = {'specialParams','minT21cm','z'};
+yfield = {'specialParams','minT21cm','T'};
+prefix = 'c';
+[figSettings,outputName] = p.initSSFigSettings(xfield,yfield,outputPath,[prefix,'_vc_']);
 figSettings.plots = [figSettings.plots, p.getLines(xfield,yfield,{'paramCases','c','vc'},caseNums)];
 p.plotSigScatter(xfield,yfield,figSettings,outputName,caseNums)
-[figSettings,outputName] = p.initSSFigSettings(xfield,yfield,outputPath,'fstar_');
+[figSettings,outputName] = p.initSSFigSettings(xfield,yfield,outputPath,[prefix,'_fstar_']);
 figSettings.plots = [figSettings.plots, p.getLines(xfield,yfield,{'paramCases','c','fstar'},caseNums)];
 p.plotSigScatter(xfield,yfield,figSettings,outputName,caseNums)
-[figSettings,outputName] = p.initSSFigSettings(xfield,yfield,outputPath,'fx_');
+[figSettings,outputName] = p.initSSFigSettings(xfield,yfield,outputPath,[prefix,'_fx_']);
 figSettings.plots = [figSettings.plots, p.getLines(xfield,yfield,{'paramCases','c','fx'},caseNums)];
 p.plotSigScatter(xfield,yfield,figSettings,outputName,caseNums)
-[figSettings,outputName] = p.initSSFigSettings(xfield,yfield,outputPath,'sed_');
+[figSettings,outputName] = p.initSSFigSettings(xfield,yfield,outputPath,[prefix,'_sed_']);
 figSettings.plots = [figSettings.plots, p.getLines(xfield,yfield,{'paramCases','c','sed'},caseNums)];
 p.plotSigScatter(xfield,yfield,figSettings,outputName,caseNums)
-[figSettings,outputName] = p.initSSFigSettings(xfield,yfield,outputPath,'tau_');
+[figSettings,outputName] = p.initSSFigSettings(xfield,yfield,outputPath,[prefix,'_tau_']);
 figSettings.plots = [figSettings.plots, p.getLines(xfield,yfield,{'paramCases','c','tau'},caseNums)];
 p.plotSigScatter(xfield,yfield,figSettings,outputName,caseNums)
 %p.plotBasicSigScatter({'specialParams','minSlope','z'},{'specialParams','minSlope','T'},outputPath);

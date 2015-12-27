@@ -85,6 +85,19 @@ classdef SIM21Analysis
             SIM21Analysis.plotData(figName,figSettings);
         end
 
+        function plotTKTSByZ(cases,varargin)
+            TK = SIM21Utils.dataTypes.TK;
+            TS = SIM21Utils.dataTypes.TS;
+            [figName,figSettings] = SIM21Analysis.initCaseByZFig(cases,TS,'T(z)','z+1','TS',varargin{:});
+            figSettings.log = 'xy';
+            figSettings.xLim = [min(TK.z),max(TK.z)] + 1;
+            figSettings.yTick = [3,10,30,100,300,1000,3000,10000];
+            figSettings.plots{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(SIM21Analysis.getZData(cases(1),TK)),'TK');
+            figSettings.plots{end+1} = SIM21Analysis.plotLine(SIM21Analysis.zPlus1(cat(1,TK.z,SIM21Gets.getTcmb(TK.z))),'TCMB','k',':',0.2);
+            SIM21Analysis.plotData(figName,figSettings);
+        end
+
+
         
         function plotSanityGraphs(c,varargin)
             f = figure();
@@ -193,6 +206,7 @@ classdef SIM21Analysis
             figSettings.xLabel = xLabel;
             figSettings.yLabel = yLabel;
             figSettings.plots = {};
+            figSettings.legend = true;
         end
         
 
@@ -211,12 +225,42 @@ classdef SIM21Analysis
             else
                 % Calculate Mean
                 SIM21Analysis.message(['calculating ',dataType.magic,' mean']);
-                dataMat=cat(1,dataType.z,mean(mean(mean(c.getData(dataType),4),3),2)');
+
+                if isequal(dataType,SIM21Utils.getDataType('TS'));
+                    dataMat = SIM21Analysis.getTsZData(c);
+                else
+                    dataMat=cat(1,dataType.z,nanmean(nanmean(nanmean(c.getData(dataType),4),3),2)');
+                end
                 
                 % Save Output
                 SIM21Analysis.message('saving data');
                 save(dataName,'dataMat');
             end
+        end
+
+
+        function dataMat = getTsZData(c)
+            TKData = c.getData('TK');
+            TS = SIM21Utils.getDataType('TS');
+            
+            global ID
+            global pathname_Data1
+            global pathname_DataBackgrounds
+            global delta_cube
+
+            pathname_Data1 = c.tmpDataPath;
+            pathname_DataBackgrounds = SIM21Utils.paths.dataBackgrounds;
+            ID = c.ID;
+            pathname_Data1 = c.tmpDataPath;
+            delta_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(c.ncube),'_d.dat'));
+
+            TSMean = [];
+            for z = TS.z
+                TSData = SIM21Gets.getTs(squeeze(TKData(find(SIM21Utils.dataTypes.TK.z == z),:,:,:)),z,c.ncube,c.fstar,c.vbc,c.vc,c.fx,c.sed,c.zeta,c.feedback,c.delayParam,c.pop,c.fsfunc,c.phVersion);
+                save(SIM21Utils.getDataFileName(c,'TS',z),'TSData');
+                TSMean = [TSMean,[nanmean(nanmean(nanmean(TSData)))]];
+            end
+            dataMat=cat(1,TS.z,TSMean);
         end
 
 
@@ -235,87 +279,7 @@ classdef SIM21Analysis
         function plotData(outputName,figSettings)
             % Plot data
             f=figure();
-            hold on;
-            
-            plotNames = {};
-            for figPlot = figSettings.plots
-                figPlot = figPlot{1};
-                switch figPlot.type
-                case 'line'
-                    h = plot(figPlot.x,figPlot.y);
-                    if isfield(figPlot,'lineColor')
-                        h.Color = figPlot.lineColor;
-                    end
-                    if isfield(figPlot,'lineStyle')
-                        h.LineStyle = figPlot.lineStyle;
-                    end
-                    if isfield(figPlot,'lineWidth')
-                        h.LineWidth = figPlot.lineWidth;
-                    end
-                case 'scatter'
-                    h = scatter(figPlot.x,figPlot.y);
-                    if isfield(figPlot,'color')
-                        h.MarkerEdgeColor = figPlot.color;
-                    else
-                        h.MarkerEdgeColor = h.CData;
-                    end
-                end
-                plotNames{end+1} = figPlot.name;
-            end
-
-            ax = gca;
-
-            % Set logarithmic axes
-            if isfield(figSettings,'log')
-                if max(figSettings.log == 'x')
-                    ax.XScale = 'log';
-                end
-                if max(figSettings.log == 'y')
-                    ax.YScale = 'log';
-                end
-            end
-
-            % Set limits
-            if isfield(figSettings,'xLim')
-                xlim(figSettings.xLim);
-            end
-            if isfield(figSettings,'yLim')
-                ylim(figSettings.yLim);
-            end
-
-            % Set tick marks
-            if isfield(figSettings,'xTick');
-                ax.XTick = figSettings.xTick;
-            else
-                1+1;
-                ax.XTick = floor(min(ax.XLim)/10)*10:10:max(ax.XLim);
-            end
-            if isfield(figSettings,'yTick')
-                ax.YTick = figSettings.yTick;
-            else
-                2+2;
-                numOfYTicks = 5;
-                yhop = (max(ax.YLim)-min(ax.YLim))/numOfYTicks;
-                ymag = 10^floor(log10(yhop));
-                yhop = floor(yhop/ymag)*ymag;
-                ax.YTick = (ceil(min(ax.YLim) / yhop) * yhop):yhop:max(ax.YLim);
-            end
-            
-            % Titles and Labels
-            if isfield(figSettings,'title');
-                title(figSettings.title,'FontSize',18);
-            end
-            if isfield(figSettings,'xLabel');
-                xlabel(figSettings.xLabel,'FontSize',12);
-            end
-            if isfield(figSettings,'yLabel');
-                ylabel(figSettings.yLabel,'FontSize',12);
-            end
-            hold off;
-            
-            % Legend
-            legend(plotNames,'Location','bestoutside');
-
+            SIM21Analysis.plotPlot(f,figSettings);
             saveas(f,outputName);
         end
 
@@ -344,6 +308,16 @@ classdef SIM21Analysis
                     else
                         h.MarkerEdgeColor = h.CData;
                     end
+                    if isfield(figPlot,'shape')
+                        h.Marker = figPlot.shape;
+                    end
+                case 'fill'
+                    if isfield(figPlot,'color')
+                        fillColor = figPlot.color;
+                    else
+                        fillColor = 'k';
+                    end
+                    h = fill(figPlot.x,figPlot.y,fillColor,'EdgeColor','None');
                 end
                 plotNames{end+1} = figPlot.name;
             end
@@ -388,18 +362,20 @@ classdef SIM21Analysis
             
             % Titles and Labels
             if isfield(figSettings,'title');
-                title(figSettings.title,'FontSize',18);
+                title(figSettings.title,'FontSize',18,'Interpreter','LaTex');
             end
             if isfield(figSettings,'xLabel');
-                xlabel(figSettings.xLabel,'FontSize',12);
+                xlabel(figSettings.xLabel,'FontSize',12,'Interpreter','LaTex');
             end
             if isfield(figSettings,'yLabel');
-                ylabel(figSettings.yLabel,'FontSize',12);
+                ylabel(figSettings.yLabel,'FontSize',12,'Interpreter','LaTex');
             end
             hold off;
             
             % Legend
-            legend(plotNames,'Location','bestoutside');
+            if figSettings.legend
+                legend(plotNames,'Location','bestoutside');
+            end
         end
 
 
@@ -420,8 +396,19 @@ classdef SIM21Analysis
             end
         end
 
+        function pfill = plotFill(XYData1,XYData2,name,Color)
+            % create line object
+            pfill.type = 'fill';
+            pfill.x = [XYData1(1,:), flip(XYData2(1,:))];
+            pfill.y = [XYData1(2,:), flip(XYData2(2,:))];
+            pfill.name = name;
+            if exist('Color','var')
+                pfill.color = Color;
+            end
+        end
 
-        function pscatter = plotScatter(XYData,name,color)
+
+        function pscatter = plotScatter(XYData,name,color,shape)
             % create line object
             pscatter.type = 'scatter';
             pscatter.x = XYData(1,:);
@@ -429,6 +416,9 @@ classdef SIM21Analysis
             pscatter.name = name;
             if exist('color','var')
                 pscatter.color = color;
+            end
+            if exist('shape','var')
+                pscatter.shape = shape;
             end
         end
 
@@ -443,6 +433,8 @@ classdef SIM21Analysis
             xHIZMaxInd = find(xHIData(1,:)==min(max(xHIData(1,:)),zMax));
             TKData = SIM21Analysis.interpData(SIM21Analysis.getZData(c,SIM21Utils.dataTypes.TK),interpStep);
             TKZMaxInd = find(TKData(1,:)==min(max(TKData(1,:)),zMax));
+            TSData = SIM21Analysis.interpData(SIM21Analysis.getZData(c,SIM21Utils.dataTypes.TS),interpStep);
+            TSZMaxInd = find(TSData(1,:)==min(max(TSData(1,:)),zMax));
             T21cmData = SIM21Analysis.interpData(SIM21Analysis.getZData(c,SIM21Utils.dataTypes.T21cm),interpStep);
             T21cmZMaxInd = max(find(diff(T21cmData(2,:))>0))+1;
 
@@ -456,13 +448,26 @@ classdef SIM21Analysis
             specialParams.maxT21cm.T = T21cmData(2,maxT21cmInd);
             
             % MIN / MAX Slope
-            slope = diff(T21cmData(2,1:T21cmZMaxInd)) ./ diff(T21cmData(1,1:T21cmZMaxInd));
+            %slope = diff(T21cmData(2,1:T21cmZMaxInd)) ./ diff(T21cmData(1,1:T21cmZMaxInd));
+            %minSlopeInd = find(slope==min(slope));
+            %maxSlopeInd = find(slope==max(slope));
+            %specialParams.minSlope.z = T21cmData(1,minSlopeInd);
+            %specialParams.minSlope.T = T21cmData(2,minSlopeInd);
+            %specialParams.minSlope.slope = slope(minSlopeInd);
+            %specialParams.maxSlope.z = T21cmData(1,maxSlopeInd);
+            %specialParams.maxSlope.T = T21cmData(2,maxSlopeInd);
+            %specialParams.maxSlope.slope = slope(maxSlopeInd);
+
+            % MIN / MAX Nu Slope
+            slope = diff(T21cmData(2,1:T21cmZMaxInd)) ./ diff(SIM21Utils.T21cmWaveLength./(T21cmData(1,1:T21cmZMaxInd)+1));
             minSlopeInd = find(slope==min(slope));
             maxSlopeInd = find(slope==max(slope));
             specialParams.minSlope.z = T21cmData(1,minSlopeInd);
+            specialParams.minSlope.nu = SIM21Utils.T21cmWaveLength/(specialParams.minSlope.z+1);
             specialParams.minSlope.T = T21cmData(2,minSlopeInd);
             specialParams.minSlope.slope = slope(minSlopeInd);
             specialParams.maxSlope.z = T21cmData(1,maxSlopeInd);
+            specialParams.maxSlope.nu = SIM21Utils.T21cmWaveLength/(specialParams.maxSlope.z+1);
             specialParams.maxSlope.T = T21cmData(2,maxSlopeInd);
             specialParams.maxSlope.slope = slope(maxSlopeInd);
             
@@ -475,14 +480,26 @@ classdef SIM21Analysis
             minTKInd = find(TKData(2,:)==min(TKData(2,1:TKZMaxInd)));
             specialParams.minTK.z = TKData(1,minTKInd);
             specialParams.minTK.T = TKData(2,minTKInd);
+
+            % MIN TS
+            minTSInd = find(TSData(2,:)==min(TSData(2,1:TSZMaxInd)));
+            specialParams.minTS.z = TSData(1,minTSInd);
+            specialParams.minTS.T = TSData(2,minTSInd);
+            specialParams.minTS.xHI = interp1(xHIData(1,:),xHIData(2,:),specialParams.minTS.z,'spline');
             
             % xHI Percentage
+            xHI80Ind = find(diff(sign(xHIData(2,1:xHIZMaxInd)-0.80)));
+            specialParams.xHI80.z = xHIData(1,xHI80Ind);
             xHI75Ind = find(diff(sign(xHIData(2,1:xHIZMaxInd)-0.75)));
             specialParams.xHI75.z = xHIData(1,xHI75Ind);
             xHI50Ind = find(diff(sign(xHIData(2,1:xHIZMaxInd)-0.50)));
             specialParams.xHI50.z = xHIData(1,xHI50Ind);
             xHI25Ind = find(diff(sign(xHIData(2,1:xHIZMaxInd)-0.25)));
             specialParams.xHI25.z = xHIData(1,xHI25Ind);
+            xHI005Ind = find(diff(sign(xHIData(2,1:xHIZMaxInd)-0.05)));
+            specialParams.xHI005.z = xHIData(1,xHI005Ind);
+            xHI001Ind = find(diff(sign(xHIData(2,1:xHIZMaxInd)-0.01)));
+            specialParams.xHI001.z = xHIData(1,xHI001Ind);
             xHI0Ind = max(find(xHIData(2,1:xHIZMaxInd)==0));
             specialParams.xHI0.z = xHIData(1,xHI0Ind);
             
