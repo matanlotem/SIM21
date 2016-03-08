@@ -317,7 +317,12 @@ classdef SIM21Analysis
                     else
                         fillColor = 'k';
                     end
-                    h = fill(figPlot.x,figPlot.y,fillColor,'EdgeColor','None');
+                    if isfield(figPlot,'alpha')
+                        fillAlpha = figPlot.alpha;
+                    else
+                        fillAlpha = 1;
+                    end
+                    h = fill(figPlot.x,figPlot.y,fillColor,'EdgeColor','None','facealpha',fillAlpha);
                 end
                 plotNames{end+1} = figPlot.name;
             end
@@ -396,7 +401,7 @@ classdef SIM21Analysis
             end
         end
 
-        function pfill = plotFill(XYData1,XYData2,name,Color)
+        function pfill = plotFill(XYData1,XYData2,name,Color,Alpha)
             % create line object
             pfill.type = 'fill';
             pfill.x = [XYData1(1,:), flip(XYData2(1,:))];
@@ -404,6 +409,9 @@ classdef SIM21Analysis
             pfill.name = name;
             if exist('Color','var')
                 pfill.color = Color;
+            end
+            if exist('Alpha','var')
+                pfill.alpha = Alpha;
             end
         end
 
@@ -446,6 +454,8 @@ classdef SIM21Analysis
             specialParams.minT21cm.T = T21cmData(2,minT21cmInd);
             specialParams.maxT21cm.z = T21cmData(1,maxT21cmInd);
             specialParams.maxT21cm.T = T21cmData(2,maxT21cmInd);
+            specialParams.fmaxT21cm.z = T21cmData(1,T21cmZMaxInd);
+            specialParams.fmaxT21cm.T = T21cmData(2,T21cmZMaxInd);
             
             % MIN / MAX Slope
             %slope = diff(T21cmData(2,1:T21cmZMaxInd)) ./ diff(T21cmData(1,1:T21cmZMaxInd));
@@ -488,6 +498,8 @@ classdef SIM21Analysis
             specialParams.minTS.xHI = interp1(xHIData(1,:),xHIData(2,:),specialParams.minTS.z,'spline');
             
             % xHI Percentage
+            xHI95Ind = find(diff(sign(xHIData(2,1:xHIZMaxInd)-0.95)));
+            specialParams.xHI95.z = xHIData(1,xHI95Ind);
             xHI80Ind = find(diff(sign(xHIData(2,1:xHIZMaxInd)-0.80)));
             specialParams.xHI80.z = xHIData(1,xHI80Ind);
             xHI75Ind = find(diff(sign(xHIData(2,1:xHIZMaxInd)-0.75)));
@@ -508,6 +520,9 @@ classdef SIM21Analysis
             THTInd = find(diff(sign(TKData(2,:)-TCMBData(2,:))));
             specialParams.THT.z = TKData(1,THTInd);
             specialParams.THT.T = TKData(2,THTInd);
+            % Heating Transition: Tb = 0
+            T21cm0Ind = max(find(diff(sign(T21cmData(2,maxT21cmInd:minT21cmInd)))) + maxT21cmInd);
+            specialParams.T21cm0.z = T21cmData(1,T21cm0Ind);
             
             % Save matrix
             fileName = [c.outputPath,'specialParams',c.ID];

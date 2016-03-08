@@ -95,13 +95,14 @@ classdef paramStudy < handle
                 tempParams(caseNum).xHI75_25.zDiff = obj.specialParams(caseNum).xHI75.z - obj.specialParams(caseNum).xHI25.z;
                 tempParams(caseNum).vcFstar = obj.paramCases(caseNum).c.vc * obj.paramCases(caseNum).c.fstar;
                 tempParams(caseNum).xHI75zNorm = obj.specialParams(caseNum).xHI75.z / obj.paramCases(caseNum).atau;
+                tempParams(caseNum).vc3fstar = obj.paramCases(caseNum).c.vc^3 * obj.paramCases(caseNum).c.fstar;
             end
         end
         
 
         function specialParamsTable(obj)
-            headers = ['General\t\t'   ,'minT21cm\t\t' ,'maxT21cm\t\t' ,'minSlope\t\t\t'      ,'maxSlope\t\t\t'      ,'minTK\t\t' ,'minTS\t\t\t'       ,'0 Crossing\t\t' ,'xHI percentage\t\t\t\t\t\t\t'                             ,'THT\t\t'   ,'final xHI\t\t'        ,'tau\t\t'              ,'\n',...
-                       'Case\t','ID\t' ,'z\t','T\t'    ,'z\t','T\t'    ,'z\t','T\t','slope\t' ,'z\t','T\t','slope\t' ,'z\t','T\t' ,'z\t','T\t','xHI\t' ,'z\t','NOC\t'    ,'z80\t','z75\t','z50\t','z25\t','z0.05\t','z0.01\t','z0\t' ,'z\t','T\t' ,'planned\t','actual\t' ,'planned\t','actual\t' ,'\n'];
+            headers = ['General\t\t'   ,'minTb\t\t' ,'maxTb\t\t' ,'firstMaxTb\t\t' ,'minTbSlope\t\t\t'    ,'maxTbSlope\t\t\t'    ,'minTK\t\t' ,'minTS\t\t\t'       ,'0 Crossing\t\t' ,'xHI percentage\t\t\t\t\t\t\t\t'                                   ,'THT\t\t'   ,'Tb=0\t' ,'final xHI\t\t'        ,'tau\t\t'              ,'\n',...
+                       'Case\t','ID\t' ,'z\t','T\t' ,'z\t','T\t' ,'z\t','T\t'      ,'z\t','T\t','slope\t' ,'z\t','T\t','slope\t' ,'z\t','T\t' ,'z\t','T\t','xHI\t' ,'z\t','NOC\t'    ,'z95\t','z80\t','z75\t','z50\t','z25\t','z0.05\t','z0.01\t','z0\t' ,'z\t','T\t' ,'z\t'    ,'planned\t','actual\t' ,'planned\t','actual\t' ,'\n'];
             tableStr = headers;
             
             function cellVal = formatCell(cellVal)
@@ -123,6 +124,8 @@ classdef paramStudy < handle
                           formatCell(obj.specialParams(caseNum).minT21cm.T)       ,'\t',...
                           formatCell(obj.specialParams(caseNum).maxT21cm.z)       ,'\t',...
                           formatCell(obj.specialParams(caseNum).maxT21cm.T)       ,'\t',...
+                          formatCell(obj.specialParams(caseNum).fmaxT21cm.z)      ,'\t',...
+                          formatCell(obj.specialParams(caseNum).fmaxT21cm.T)      ,'\t',...
                           formatCell(obj.specialParams(caseNum).minSlope.z)       ,'\t',...
                           formatCell(obj.specialParams(caseNum).minSlope.T)       ,'\t',...
                           formatCell(obj.specialParams(caseNum).minSlope.slope)   ,'\t',...
@@ -136,6 +139,7 @@ classdef paramStudy < handle
                           formatCell(obj.specialParams(caseNum).minTS.xHI)        ,'\t',...
                           formatCell(obj.specialParams(caseNum).xCross.z)         ,'\t',...
                           formatCell(length(obj.specialParams(caseNum).xCross.z)) ,'\t',...
+                          formatCell(obj.specialParams(caseNum).xHI95.z)          ,'\t',...
                           formatCell(obj.specialParams(caseNum).xHI80.z)          ,'\t',...
                           formatCell(obj.specialParams(caseNum).xHI75.z)          ,'\t',...
                           formatCell(obj.specialParams(caseNum).xHI50.z)          ,'\t',...
@@ -145,6 +149,7 @@ classdef paramStudy < handle
                           formatCell(obj.specialParams(caseNum).xHI0.z)           ,'\t',...
                           formatCell(obj.specialParams(caseNum).THT.z)            ,'\t',...
                           formatCell(obj.specialParams(caseNum).THT.T)            ,'\t',...
+                          formatCell(obj.specialParams(caseNum).T21cm0.z)         ,'\t',...
                           formatCell(obj.paramCases(caseNum).fxHI)                ,'\t',...
                           formatCell(fxHI)                                        ,'\t',...
                           formatCell(obj.paramCases(caseNum).atau)                ,'\t',...
@@ -390,88 +395,7 @@ classdef paramStudy < handle
         end
 
 
-        function finalPlots(obj)
-            %graphsXY = {{{'specialParams','minSlope','z'},{'specialParams','minSlope','T'}},...
-            %            {{'specialParams','maxSlope','z'},{'specialParams','maxSlope','T'}},...
-            %            {{'specialParams','minT21cm','z'},{'specialParams','minT21cm','T'}},...
-            %            {{'specialParams','maxT21cm','z'},{'specialParams','maxT21cm','T'}}};
-            
-            outputPath = [obj.outputPath,'Graphs/Final/'];
-            figSettings = SIM21Analysis.initFigSettings('','','$\nu\ [MHz]$','$T_b\ [mK]$');
-            figSettings.legend = false;
-            obj.plotFinalSigScatter({'specialParams','minT21cm','z'},{'specialParams','minT21cm','T'},figSettings,[outputPath,'Min21cm.png']);
-            obj.plotFinalSigScatter({'specialParams','maxT21cm','z'},{'specialParams','maxT21cm','T'},figSettings,[outputPath,'Max21cm.png']);
-            obj.plotFinalSigScatter({'specialParams','minSlope','z'},{'specialParams','minSlope','T'},figSettings,[outputPath,'MinSlopeT.png']);
-            obj.plotFinalSigScatter({'specialParams','maxSlope','z'},{'specialParams','maxSlope','T'},figSettings,[outputPath,'MaxSlopeT.png']);
-            figSettings = SIM21Analysis.initFigSettings('','','$\nu\ [MHz]$','$\frac{dT_b}{d\nu}\ [\frac{mK}{MHz}]$');
-            figSettings.legend = false;
-            obj.plotFinalSigScatter({'specialParams','minSlope','z'},{'specialParams','minSlope','slope'},figSettings,[outputPath,'MinSlopeS.png']);
-            obj.plotFinalSigScatter({'specialParams','maxSlope','z'},{'specialParams','maxSlope','slope'},figSettings,[outputPath,'MaxSlopeS.png']);
-
-            % Stack T21cm
-            outputName = [outputPath,'T21cmStacked.png'];
-            figSettings = SIM21Analysis.initFigSettings('','','$\nu\ [MHz]$','$T_b\ [mK]$');
-            figSettings.legend = false;
-
-            bigZetaCases = obj.areRun([58:65]);
-            deltaZCases = obj.areRun([35:2:49]);
-            tau93Cases = [34:2:48];
-            badTSCases = obj.areRun(setdiff([40,41,48,49,56],[bigZetaCases,deltaZCases,tau93Cases]));
-            smallVarCases = setdiff(obj.smallVarCases,[badTSCases,bigZetaCases,deltaZCases,tau93Cases]);
-            largeVarCases = setdiff(obj.largeVarCases,[badTSCases,bigZetaCases,deltaZCases,tau93Cases]);
-
-            T21cmDataReg = SIM21Analysis.getZData(obj.paramCases(1).c,'T21cm');
-            T21cmDataReg = [SIM21Utils.T21cmWaveLength./(T21cmDataReg(1,:)+1); T21cmDataReg(2,:)];
-
-            T21cmData56 = SIM21Analysis.getZData(obj.paramCases(56).c,'T21cm');
-            figSettings.plots{end+1} = SIM21Analysis.plotLine([T21cmDataReg(1,:);T21cmData56(2,:)],'56',[0.9,0.9,0.9],'-',2);
-
-            T21cmDatas = [];
-            for caseNum = [deltaZCases,bigZetaCases];
-                T21cmData = SIM21Analysis.getZData(obj.paramCases(caseNum).c,'T21cm');
-                T21cmDatas = [T21cmDatas; T21cmData(2,:)];
-            end
-            figSettings.plots{end+1} = SIM21Analysis.plotFill([T21cmDataReg(1,:); min(T21cmDatas)],[T21cmDataReg(1,:); max(T21cmDatas)],'bigZeta and delta Z',[0.9,0.9,0.9]);
-
-            T21cmDatas = [];
-            for caseNum = largeVarCases;
-                T21cmData = SIM21Analysis.getZData(obj.paramCases(caseNum).c,'T21cm');
-                T21cmDatas = [T21cmDatas; T21cmData(2,:)];
-            end
-            figSettings.plots{end+1} = SIM21Analysis.plotFill([T21cmDataReg(1,:); min(T21cmDatas)],[T21cmDataReg(1,:); max(T21cmDatas)],'Large Variations',[0.7,0.7,0.7]);
-
-            T21cmDatas = [];
-            for caseNum = smallVarCases
-                T21cmData = SIM21Analysis.getZData(obj.paramCases(caseNum).c,'T21cm');
-                T21cmDatas = [T21cmDatas; T21cmData(2,:)];
-            end
-            figSettings.plots{end+1} = SIM21Analysis.plotFill([T21cmDataReg(1,:); min(T21cmDatas)],[T21cmDataReg(1,:); max(T21cmDatas)],'Small Variations',[0.5,0.5,0.5]);
-
-            figSettings.plots{end+1} = SIM21Analysis.plotLine(T21cmDataReg,'Reg','k','-',2);
-
-            f = figure();
-            figSettings.xTick = [0:30:300];
-            SIM21Analysis.plotPlot(f,figSettings);
-            axnu = gca;
-            axz = axes('Position',axnu.Position,...
-                       'XAxisLocation','top',...
-                       'Color','none');
-            axz.YTick = [];
-            axnuXLim = axnu.XLim;
-            gca;
-            xlim(axnuXLim);
-            maxZ1 = SIM21Utils.T21cmWaveLength/axnuXLim(1);
-            minZ1 = SIM21Utils.T21cmWaveLength/axnuXLim(2);
-            xTickVals = flip(floor(ceil(minZ1).*(1.5.^[0:8])));
-            axz.XTick = SIM21Utils.T21cmWaveLength./xTickVals;
-            axz.XTickLabel = num2str(xTickVals');
-            xlabel('$1+z$','FontSize',12,'Interpreter','LaTex');
-            saveas(f,outputName);
-            saveas(f,outputName(1:end-4),'epsc');
-
-        end
-
-        function plotFinalSigScatter(obj,xfield,yfield,figSettings,outputName)
+        function finalPlots(obj)            
             bigZetaCases = obj.areRun([58:65]);
             deltaZCases = obj.areRun([35:2:49]);
             tau93Cases = [34:2:48];
@@ -481,10 +405,101 @@ classdef paramStudy < handle
 
             caseTypes = {obj.regularCase,smallVarCases,largeVarCases,badTSCases,deltaZCases,bigZetaCases};
             caseNames = {'regular','small variations','large variations','bad Ts','\Delta z','bad zeta'};
-
-            %caseColors = {[0.3,0.4,0.9],[0.7,0.15,0.15],[0.9,0.75,0],[0.79,0.9,0.79],[0.87,0.73,0.9],[0.8,0.8,0.8]};
             caseColors = {[0.3,0.4,0.9],[0.7,0.15,0.15],[0.9,0.75,0],[0.8,0.8,0.8],[0.8,0.8,0.8],[0.8,0.8,0.8]};
             caseShapes = {'o','o','o','p','s','d'};
+
+            tau111Case = [35];
+            tau66Cases = setdiff(obj.getCasesByFieldVals({{'paramCases','c','tau'}},[0.066],obj.workCases),[tau111Case,tau93Cases]);
+            tau82Cases = setdiff(obj.getCasesByFieldVals({{'paramCases','c','tau'}},[0.082],obj.workCases),[tau111Case,tau93Cases]);
+            tau98Cases = setdiff(obj.getCasesByFieldVals({{'paramCases','c','tau'}},[0.098],obj.workCases),[tau111Case,tau93Cases]);
+
+            tauCaseTypes = {tau66Cases,tau82Cases,tau98Cases,tau111Case};
+            tauCaseNames = {'tau=0.066','tau=0.082','tau=0.098','tau=0.111'};
+            tauCaseColors = {[0.3,0.4,0.9],[0.7,0.15,0.15],[0.9,0.75,0],[0.2,0.8,0.6]};
+            tauCaseShapes = {'o','o','o','o'};
+            
+            outputPath = [obj.outputPath,'Graphs/Final/'];
+
+            % Points of interest by redshift - Tb
+            figSettings = SIM21Analysis.initFigSettings('','','$\nu\ [MHz]$','$T_b\ [mK]$');
+            figSettings.legend = false;
+            obj.plotFinalSigScatter({'specialParams','minT21cm','z'},{'specialParams','minT21cm','T'},figSettings,[outputPath,'Min21cm.png'],caseTypes,caseNames,caseColors,caseShapes,1);
+            obj.plotFinalSigScatter({'specialParams','minT21cm','z'},{'specialParams','minT21cm','T'},figSettings,[outputPath,'Tau_Min21cm.png'],tauCaseTypes,tauCaseNames,tauCaseColors,tauCaseShapes,1);
+            obj.plotFinalSigScatter({'specialParams','maxT21cm','z'},{'specialParams','maxT21cm','T'},figSettings,[outputPath,'Max21cm.png'],caseTypes,caseNames,caseColors,caseShapes,1);
+            obj.plotFinalSigScatter({'specialParams','maxT21cm','z'},{'specialParams','maxT21cm','T'},figSettings,[outputPath,'Tau_Max21cm.png'],tauCaseTypes,tauCaseNames,tauCaseColors,tauCaseShapes,1);
+            obj.plotFinalSigScatter({'specialParams','maxSlope','z'},{'specialParams','maxSlope','T'},figSettings,[outputPath,'MaxSlopeT.png'],caseTypes,caseNames,caseColors,caseShapes,1);
+            obj.plotFinalSigScatter({'specialParams','maxSlope','z'},{'specialParams','maxSlope','T'},figSettings,[outputPath,'Tau_MaxSlopeT.png'],tauCaseTypes,tauCaseNames,tauCaseColors,tauCaseShapes,1);
+            obj.plotFinalSigScatter({'specialParams','fmaxT21cm','z'},{'specialParams','fmaxT21cm','T'},figSettings,[outputPath,'FirstMax21cm.png'],caseTypes,caseNames,caseColors,caseShapes,1);
+            obj.plotFinalSigScatter({'specialParams','fmaxT21cm','z'},{'specialParams','fmaxT21cm','T'},figSettings,[outputPath,'Tau_FirstMax21cm.png'],tauCaseTypes,tauCaseNames,tauCaseColors,tauCaseShapes,1);
+            % add vc-fstar lines
+            c = [obj.paramCases(obj.workCases).c];
+            for vc = unique([c.vc])
+                for fstar = unique([c.fstar])
+                    l = obj.getLineByFieldVals({'specialParams','minSlope','z'},{'specialParams','minSlope','T'},{{'paramCases','c','vc'},{'paramCases','c','fstar'}},[vc,fstar],obj.workCases);
+                    if ~ isempty(l.x)
+                        l.x = l.x+1;
+                        figSettings.plots = [figSettings.plots, l];
+                    end
+                end
+            end
+            obj.plotFinalSigScatter({'specialParams','minSlope','z'},{'specialParams','minSlope','T'},figSettings,[outputPath,'MinSlopeT.png'],caseTypes,caseNames,caseColors,caseShapes,1);
+            obj.plotFinalSigScatter({'specialParams','minSlope','z'},{'specialParams','minSlope','T'},figSettings,[outputPath,'Tau_MinSlopeT.png'],tauCaseTypes,tauCaseNames,tauCaseColors,tauCaseShapes,1);
+
+            % Points of interest by redshift - slope
+            figSettings = SIM21Analysis.initFigSettings('','','$\nu\ [MHz]$','$\frac{dT_b}{d\nu}\ [\frac{mK}{MHz}]$');
+            figSettings.legend = false;
+            obj.plotFinalSigScatter({'specialParams','maxSlope','z'},{'specialParams','maxSlope','slope'},figSettings,[outputPath,'MaxSlopeS.png'],caseTypes,caseNames,caseColors,caseShapes,1);
+            obj.plotFinalSigScatter({'specialParams','maxSlope','z'},{'specialParams','maxSlope','slope'},figSettings,[outputPath,'Tau_MaxSlopeS.png'],tauCaseTypes,tauCaseNames,tauCaseColors,tauCaseShapes,1);
+            % add vc-fstar lines
+            c = [obj.paramCases(obj.workCases).c];
+            for vc = unique([c.vc])
+                for fstar = unique([c.fstar])
+                    l = obj.getLineByFieldVals({'specialParams','minSlope','z'},{'specialParams','minSlope','slope'},{{'paramCases','c','vc'},{'paramCases','c','fstar'}},[vc,fstar],obj.workCases);
+                    if ~ isempty(l.x)
+                        l.x = l.x+1;
+                        figSettings.plots = [figSettings.plots, l];
+                    end
+                end
+            end
+            obj.plotFinalSigScatter({'specialParams','minSlope','z'},{'specialParams','minSlope','slope'},figSettings,[outputPath,'MinSlopeS.png'],caseTypes,caseNames,caseColors,caseShapes,1);
+            obj.plotFinalSigScatter({'specialParams','minSlope','z'},{'specialParams','minSlope','slope'},figSettings,[outputPath,'Tau_MinSlopeS.png'],tauCaseTypes,tauCaseNames,tauCaseColors,tauCaseShapes,1);
+            % Reionization oints of interest by redshft to Tb=0
+            figSettings = SIM21Analysis.initFigSettings('','','$dT_b = 0\ \ (z+1)$','');
+            figSettings.legend = false;
+            figSettings.yLabel = '$xHI = 0.95\ \ (z+1)$';
+            obj.plotFinalSigScatter({'specialParams','T21cm0','z'},{'specialParams','xHI95','z'},figSettings,[outputPath,'THTxHI95.png'],caseTypes,caseNames,caseColors,caseShapes);
+            obj.plotFinalSigScatter({'specialParams','T21cm0','z'},{'specialParams','xHI95','z'},figSettings,[outputPath,'Tau_THTxHI95.png'],tauCaseTypes,tauCaseNames,tauCaseColors,tauCaseShapes);
+            figSettings.yLabel = '$xHI = 0.8\ \ (z+1)$';
+            obj.plotFinalSigScatter({'specialParams','T21cm0','z'},{'specialParams','xHI80','z'},figSettings,[outputPath,'THTxHI80.png'],caseTypes,caseNames,caseColors,caseShapes);
+            obj.plotFinalSigScatter({'specialParams','T21cm0','z'},{'specialParams','xHI80','z'},figSettings,[outputPath,'Tau_THTxHI80.png'],tauCaseTypes,tauCaseNames,tauCaseColors,tauCaseShapes);
+            figSettings.yLabel = '$xHI = 0.5\ \ (z+1)$';
+            obj.plotFinalSigScatter({'specialParams','T21cm0','z'},{'specialParams','xHI50','z'},figSettings,[outputPath,'THTxHI50.png'],caseTypes,caseNames,caseColors,caseShapes);
+            obj.plotFinalSigScatter({'specialParams','T21cm0','z'},{'specialParams','xHI50','z'},figSettings,[outputPath,'Tau_THTxHI50.png'],tauCaseTypes,tauCaseNames,tauCaseColors,tauCaseShapes);
+
+            figSettings = SIM21Analysis.initFigSettings('','','$1+z$','${vc}^3*fstar$');
+            figSettings.log = 'xy';
+            obj.plotFinalSigScatter({'specialParams','fmaxT21cm','z'},{'tempParams','vc3fstar'},figSettings,[outputPath,'vc3fstar_z.png'],caseTypes,caseNames,caseColors,caseShapes);
+            
+
+            % Stack T21cm
+            stackCaseTypes = {[56],[deltaZCases,bigZetaCases],largeVarCases,smallVarCases,[1]};
+            stackCaseNames = {'56','bigZeta and delta Z','Large Variations','Small Variations','Regular'};
+            stackCaseColors = {[0.9,0.9,0.9],[0,1,0],[1,0,0],[0,0,1],[0,0,0]};
+
+            figSettings = SIM21Analysis.initFigSettings('','','$\nu\ [MHz]$','$T_b\ [mK]$');
+            figSettings.legend = false;
+            obj.plotStackedFills(figSettings,[outputPath,'T21cmStacked.png'],stackCaseTypes,stackCaseNames,stackCaseColors);
+            obj.plotStackedFills(figSettings,[outputPath,'Tau_T21cmStacked.png'],tauCaseTypes,tauCaseNames,tauCaseColors);
+            figSettings = SIM21Analysis.initFigSettings('','','$\nu\ [MHz]$','$\frac{dT_b}{d\nu}\ [\frac{mK}{MHz}]$');
+            figSettings.legend = false;
+            obj.plotStackedFills(figSettings,[outputPath,'T21cmDiffStacked.png'],stackCaseTypes,stackCaseNames,stackCaseColors,1);
+            obj.plotStackedFills(figSettings,[outputPath,'Tau_T21cmDiffStacked.png'],tauCaseTypes,tauCaseNames,tauCaseColors,1);
+        end
+
+        function plotFinalSigScatter(obj,xfield,yfield,figSettings,outputName,caseTypes,caseNames,caseColors,caseShapes,freq)
+            if ~exist('freq','var')
+                freq = 0;
+            end
             scatters = {};
 
             for caseTypeNum = 1:length(caseTypes)
@@ -492,16 +507,71 @@ classdef paramStudy < handle
                 
                 if ~ isempty(typeCaseNums)
                     x = obj.getField(typeCaseNums,xfield);
-                    x = SIM21Utils.T21cmWaveLength./(1+x);
+                    if xfield{end} == 'z'
+                        x = x+1;
+                    end
                     y = obj.getField(typeCaseNums,yfield);
+                    if yfield{end} == 'z'
+                        y = y+1;
+                    end
                     scatters{end+1} = SIM21Analysis.plotScatter([x;y],caseNames{caseTypeNum},caseColors{caseTypeNum},caseShapes{caseTypeNum});
                 end
             end
 
             figSettings.plots = [scatters, figSettings.plots];
+            if freq
+                for ind = 1:length(figSettings.plots)
+                    figSettings.plots{ind}.x = SIM21Utils.T21cmWaveLength./(figSettings.plots{ind}.x);
+                end
+            end
             figSettings.xTick = [20:20:400];
             f = figure();
             SIM21Analysis.plotPlot(f,figSettings);
+            if freq
+                obj.addFrequencyZAxis(1.3.^[0:5]);
+            end
+
+            saveas(f,outputName);
+            saveas(f,outputName(1:end-4),'epsc');
+            saveas(f,outputName(1:end-4),'fig');
+        end
+
+
+        function plotStackedFills(obj,figSettings,outputName,caseTypes,caseNames,caseColors,d)
+            if ~ exist('d','var')
+                d=0;
+            end
+            for caseTypeInd = 1:length(caseTypes)
+                typeCaseNums = caseTypes{caseTypeInd};
+
+                if ~ isempty(typeCaseNums)
+                    T21cmDatas = [];
+                    for caseNum = typeCaseNums;
+                        T21cmData = SIM21Analysis.getZData(obj.paramCases(caseNum).c,'T21cm');
+                        T21cmData = [SIM21Utils.T21cmWaveLength./(T21cmData(1,:)+1); T21cmData(2,:)];
+                        if d
+                            T21cmData = [T21cmData(1,1:end-1);diff(T21cmData(2,:)) ./ diff(T21cmData(1,:))];
+                        end
+                        T21cmDatas = [T21cmDatas; T21cmData(2,:)];
+                    end
+                    if length(typeCaseNums) == 1
+                        figSettings.plots{end+1} = SIM21Analysis.plotLine([T21cmData(1,:);T21cmData(2,:)],caseNames{caseTypeInd},caseColors{caseTypeInd},'-',2);
+                    else
+                        figSettings.plots{end+1} = SIM21Analysis.plotFill([T21cmData(1,:); min(T21cmDatas)],[T21cmData(1,:); max(T21cmDatas)],caseNames{caseTypeInd},caseColors{caseTypeInd},0.5);
+                    end
+                end
+            end
+
+            f = figure();
+            figSettings.xTick = [0:30:300];
+            SIM21Analysis.plotPlot(f,figSettings);
+            obj.addFrequencyZAxis(1.5.^[0:8]);
+
+            saveas(f,outputName);
+            saveas(f,outputName(1:end-4),'epsc');
+        end
+
+        function addFrequencyZAxis(obj,tickVals)
             axnu = gca;
             axz = axes('Position',axnu.Position,...
                        'XAxisLocation','top',...
@@ -512,12 +582,10 @@ classdef paramStudy < handle
             xlim(axnuXLim);
             maxZ1 = SIM21Utils.T21cmWaveLength/axnuXLim(1);
             minZ1 = SIM21Utils.T21cmWaveLength/axnuXLim(2);
-            xTickVals = flip(floor(ceil(minZ1).*(1.3.^[0:5])));
+            xTickVals = flip(floor(ceil(minZ1).*(tickVals)));
             axz.XTick = SIM21Utils.T21cmWaveLength./xTickVals;
             axz.XTickLabel = num2str(xTickVals');
             xlabel('$1+z$','FontSize',12,'Interpreter','LaTex');
-            saveas(f,outputName);
-            saveas(f,outputName(1:end-4),'epsc');
         end
 
 
