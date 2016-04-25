@@ -1,9 +1,17 @@
 p = paramStudy();
-f = findZeta();
-for caseNum = [1]
+%f = findZeta();
+
+for caseNum = [58:65]
 	caseNum
+	if mod(caseNum,2)
+		fstar = 0.158;
+	else
+		fstar = 0.015;
+	end
+	0.015, fstar
 	c = p.paramCases(caseNum).c;
-	runName = ['PS_',num2str(caseNum)];
+	c.fstar = fstar;
+	runName = ['PS_',num2str(caseNum),'_FS'];
 	c.setPathExt([runName]);
 	c.ID = c.newID();
 	SIM21Utils.runSimulation(c,runName);

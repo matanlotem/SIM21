@@ -36,17 +36,23 @@ classdef SIM21Gets
                     if(zint(kk)>50)
                         JA_interp(kk,:,:,:) = (1e-20)*ones(N,N,N);%+JAX;
                     else
+                        disp(['load Jalpha ', num2str(zint(kk))]);
                         load(strcat(pathname_Data1,'Jalpha_',num2str(zint(kk)),ID,'.mat'));
+                        disp(['loaded Jalpha ', num2str(zint(kk))]);
                         %JA_interp(kk,:,:,:) = JA+(1+delta_cube.*LWgetDz( zint(kk))/LWgetDz(40)).*JAX*nb*(1+zint(kk))^3*c/(getHz(zint(kk))*4*pi*nu_a^2*hpl)/(3*10^24)^2; 
                         JA_interp(kk,:,:,:) = Jalpha;%+JAX;
                         Jalpha =[]; 
                     end
                     %JAX =[];
-                end      
+                end
+                disp('calc1');
                 JA_alpha = exp(squeeze((interp1(log(1+zint),log(JA_interp),log(1+z0)))));
                 JA_interp=[];
+                disp('calc2');
             else
+                disp(['load Jalpha ', num2str(zint)]);
                 load(strcat(pathname_Data1,'Jalpha_',num2str(zint),ID,'.mat'));
+                disp(['loaded Jalpha ', num2str(zint)]);
                 JA_alpha =Jalpha;%X+JA;%
             end
             Jalpha=[];

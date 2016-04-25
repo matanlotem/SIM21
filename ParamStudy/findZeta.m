@@ -28,7 +28,7 @@ classdef findZeta < handle
             zetaCase.runName = ['findZeta_',num2str(caseNum),'_',num2str(zeta)];
             zetaCase.c.dataPath = ['/scratch300/matanlotem/Data/',zetaCase.runName,'/'];
             zetaCase.c.tmpDataPath = ['/scratch300/matanlotem/TmpData/',zetaCase.runName,'/'];
-            zetaCase.c.setOutputPath(['/scratch300/matanlotem/ParamStudy/',zetaCase.runName,'/']);
+            zetaCase.c.setOutputPath(['/scratch300/matanlotem/GRID/',zetaCase.runName,'/']); %%%%%%%%%%%%%
 
             % set properties
             zetaCase.caseNum = caseNum;

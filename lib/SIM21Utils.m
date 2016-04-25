@@ -15,7 +15,7 @@ classdef SIM21Utils
                            'Neut', struct('z',[6:0.1:15,16:60],'magic','Neut','tmpData',0),...
                            'eps', struct('z',[6:60],'magic','eps','tmpData',1),...
                            'xe', struct('z',[5:60],'magic','xe','tmpData',1),...
-                           'JLW', struct('z',[6,66],'magic','JLW','tmpData',1),...
+                           'JLW', struct('z',[6:66],'magic','JLW','tmpData',1),...
                            'Jalpha', struct('z',[6:60],'magic','Jalpha','tmpData',1),...
                            'Lion', struct('z',[6:60],'magic','Lion','tmpData',1),...
                            'TS',struct('z',[6:60],'magic','TS','tmpData',1));
@@ -35,9 +35,11 @@ classdef SIM21Utils
         
         
         function MPath = getMatrixPath(MName)
-            if length(MName>4)
-                if isequal(MName(end-3:end),'.mat')
-                    MName = MName(1:end-4)
+            if length(MName)>4
+                if MName > 3
+                    if isequal(MName(end-3:end),'.mat')
+                        MName = MName(1:end-4)
+                    end
                 end
             end
             MPath=[SIM21Utils.paths.matrices,MName,'.mat'];
@@ -55,6 +57,14 @@ classdef SIM21Utils
             if ischar(dataType)
                 dataType = getfield(SIM21Utils.dataTypes,dataType);
             end
+        end
+                
+        function z = roundDataTypeZ(dataType,z)
+            if ischar(dataType)
+                dataType = getfield(SIM21Utils.dataTypes,dataType);
+            end
+            z = dataType.z(abs(dataType.z-z) == min(abs(dataType.z-z)));
+            z = z(end);
         end
 
 

@@ -1,24 +1,22 @@
 classdef SIM21PwSp
     methods(Static)
-        function ID = getPwSp(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayParam,MyPop,FSfunc,photoheatingVersion,zeta) 
+        %%%function ID = getPwSp(MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayParam,MyPop,FSfunc,photoheatingVersion,zeta) 
+        function ID = getPwSp(runCase) 
             tic;
             global pathname_Data1 % e.g. scratch (to save JLW, x_e, Lion, eps, Jalpha)
             global pathname_Data2
-            pathname_Data1 = '/scratch/matanlotem/Data/';
-            pathname_Data2 = '/scratch300/matanlotem/Data/';
-            pathname_DataBackgrounds = '/scratch300/matanlotem/DataBackgrounds_withPlanck/';
-            pathname_Output = '/scratch300/matanlotem/ParamStudy/';
-
             global ID
-            ID = ['_' num2str(MyCube)...
-                  '_' num2str(MyStar) '_' num2str(MyVBC) '_' num2str(MyVc)...
-                  '_' num2str(MyFX) '_' num2str(MySED) '_' num2str(MyTau)...
-                  '_' num2str(MyFeed) '_' num2str(DelayParam) '_' num2str(MyPop) '_' num2str(FSfunc) '_' num2str(photoheatingVersion)];
-            
             global vbc_cube
             global delta_cube
-            delta_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(MyCube),'_d.dat'));
-            vbc_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(MyCube),'_v.dat'));
+
+            pathname_Data1 = runCase.tmpDataPath;
+            pathname_Data2 = runCase.dataPath;
+            pathname_DataBackgrounds = SIM21Utils.paths.dataBackgrounds;
+            pathname_Output = runCase.outputPath;
+            ID = runCase.ID;
+
+            delta_cube = importdata([pathname_DataBackgrounds,'my',num2str(runCase.ncube),'_d.dat']);
+            vbc_cube = importdata([pathname_DataBackgrounds,'my',num2str(runCase.ncube),'_v.dat']);
             
             N=length(vbc_cube);
             Lpix=3;
@@ -26,9 +24,9 @@ classdef SIM21PwSp
             Lx=Lpix*N;
             Nmu = 11;
 
-            Nvec = MyCube;
-            %zspec = [6:0.1:15, 16:1:40];
-            zspec = 6:0.1:6.2;
+            Nvec = runCase.ncube;
+            zspec = [6:0.1:15, 16:1:40];
+            %zspec = 6:0.1:6.2; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             
             PowerMat=zeros(length(zspec),100);
             PowerMat_iso=zeros(length(zspec),100);
@@ -49,9 +47,12 @@ classdef SIM21PwSp
                 %%%%%
                 
                 del = real(max(-0.9,min(1,delta_cube*LWgetDz(zspec(indz))/LWgetDz(40))));
-                [Tb,T21] = SIM21PwSp.getTbcube(zspec(indz),MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayParam,MyPop,FSfunc,photoheatingVersion);
+                %%%[Tb,T21] = SIM21PwSp.getTbcube(zspec(indz),MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayParam,MyPop,FSfunc,photoheatingVersion);
+                disp('getTbcube');
+                [Tb,T21] = SIM21PwSp.getTbcube(zspec(indz),runCase);
                 Tb2 = real((Tb-T21)./T21);
-            
+                
+                disp('getPkRec');
                 [Pk,Pk_iso,Pk_X,Pk_del,Pmu4,Pmu2,Pmu0,K,nk] = SIM21PwSp.getPkRec(Tb2,del,Lx,ep);
                 Pk = Pk.*T21^2; 
                 Pk_iso = Pk_iso.*T21^2;  
@@ -75,25 +76,28 @@ classdef SIM21PwSp
                 %[Tb,T21] = getTbcube(zspec(indz),MyCube,MyStar,MyVBC,MyVc,MyFX,MySED,MyTau,MyFeed,DelayParam,MyPop,FSfunc,photoheatingVersion);
                 %del = real(max(-0.9,min(1,delta_cube*LWgetDz(zspec(indz))/LWgetDz(40))));
                 
-                delta_v = SIM21PwSp.getDV(del,Lx);
-                Tlin = Tb.*(1+delta_v); 
-                T21 = mean(mean(mean(Tlin)));
-                Tlin = real((Tlin-T21)./T21);
-                
-                %[Pk,Pkm,Kout,Muout,nk,nkm] = SIM21PwSp.getPkMu(Tlin,Lx,ep,Nmu);
-                [Pkm,Kout,Muout,nkm] = SIM21PwSp.getPkMu(Tlin,Lx,ep,Nmu);
-                Pkm = Pkm*T21.^2;
-                PowerMatMu(indz,:,:) = Pkm;
+                %%%% Don't get Pkm
+                %%%% disp('getDV');
+                %%%% delta_v = SIM21PwSp.getDV(del,Lx);
+                %%%% Tlin = Tb.*(1+delta_v); 
+                %%%% T21 = mean(mean(mean(Tlin)));
+                %%%% Tlin = real((Tlin-T21)./T21);
+                %%%% 
+                %%%% %[Pk,Pkm,Kout,Muout,nk,nkm] = SIM21PwSp.getPkMu(Tlin,Lx,ep,Nmu);
+                %%%% disp('gePktMu');
+                %%%% [Pkm,Kout,Muout,nkm] = SIM21PwSp.getPkMu(Tlin,Lx,ep,Nmu);
+                %%%% Pkm = Pkm*T21.^2;
+                %%%% PowerMatMu(indz,:,:) = Pkm;
             end
 
-            save(strcat(pathname_Output,'N_TPowerMat',ID,'.mat'),'PowerMat');
-            save(strcat(pathname_Output,'N_TPowerMat_iso',ID,'.mat'),'PowerMat_iso');
-            save(strcat(pathname_Output,'N_TPowerMat_X',ID,'.mat'),'PowerMat_X');
-            save(strcat(pathname_Output,'N_TPowerMat_del',ID,'.mat'),'PowerMat_del');
-            save(strcat(pathname_Output,'N_TPowerMat_0',ID,'.mat'),'PowerMat_0');
-            save(strcat(pathname_Output,'N_TPowerMat_4',ID,'.mat'),'PowerMat_4');
-            save(strcat(pathname_Output,'N_TPowerMat_2',ID,'.mat'),'PowerMat_2');
-            save(strcat(pathname_Output,'N_TPowerMat_mu',ID,'.mat'),'PowerMatMu');
+            save([pathname_Output,'PowerMat',ID,'.mat'],'PowerMat');
+            save([pathname_Output,'PowerMat_iso',ID,'.mat'],'PowerMat_iso');
+            save([pathname_Output,'PowerMat_X',ID,'.mat'],'PowerMat_X');
+            save([pathname_Output,'PowerMat_del',ID,'.mat'],'PowerMat_del');
+            save([pathname_Output,'PowerMat_0',ID,'.mat'],'PowerMat_0');
+            save([pathname_Output,'PowerMat_4',ID,'.mat'],'PowerMat_4');
+            save([pathname_Output,'PowerMat_2',ID,'.mat'],'PowerMat_2');
+            %%%%save([pathname_Output,'N_TPowerMat_mu',ID,'.mat'],'PowerMatMu');
             toc;
         end
         
@@ -141,15 +145,15 @@ classdef SIM21PwSp
         end
         
         
-        function [Tb,T21] = getTbcube(zii,ncube,fstar,flag,flagM,XeffTerm,Ispec,Reion,feedback,p,pop,FSfunc,photoheatingVersion)
+        %%%function [Tb,T21] = getTbcube(zii,ncube,fstar,flag,flagM,XeffTerm,Ispec,Reion,feedback,p,pop,FSfunc,photoheatingVersion)
+        function [Tb,T21] = getTbcube(zii,runCase)
             global pathname_Data2
             global ID
             global delta_cube
             load(SIM21Utils.getMatrixPath('Planck_parameters'));
             
             del = real(max(-0.9,min(1,delta_cube*LWgetDz(zii)/LWgetDz(40))));
-            
-            if(ncube<100)
+            if(runCase.ncube<100)
                 Lpix = 3;
             else
                 Lpix = 6;
@@ -167,9 +171,12 @@ classdef SIM21PwSp
             F_interp = zeros(2,N,N,N);
             
             for iz=1:2
+                disp(['load ',num2str(iz)]);
                 load(strcat(pathname_Data2,'TK_',num2str(zint(iz)),ID,'.mat'));
-                Ts = SIM21Gets.getTs(TK,zint(iz),ncube,fstar,flag,flagM,XeffTerm,Ispec,Reion,feedback,p,pop,FSfunc,photoheatingVersion);
+                disp('getTs');
+                Ts = SIM21Gets.getTs(TK,zint(iz),runCase.ncube,runCase.fstar,runCase.vbc,runCase.vc,runCase.fx,runCase.sed,runCase.zeta,runCase.feedback,runCase.delayParam,runCase.pop,runCase.fsfunc,runCase.phVersion);
                 %Ts = TK;
+                disp('gotTs');
                 Ts(Ts==0)=1e-20;   
                 deltaTerm = (ones(size(delta_cube))+max(-0.9,min(1,delta_cube*LWgetDz(zint(iz))/LWgetDz(40))));
                 
@@ -181,8 +188,8 @@ classdef SIM21PwSp
             Tb = squeeze((interp1(log(1+zint),F_interp,log(1+zii)))); 
             F_interp=[];
             
-            load(strcat(pathname_Data2,'xHI_',num2str(zii),ID,'.mat'));
-            load(strcat(pathname_Data2,'Neut_',num2str(zii),ID,'.mat'));
+            load([pathname_Data2,'xHI_',num2str(zii),ID,'.mat']);
+            load([pathname_Data2,'Neut_',num2str(zii),ID,'.mat']);
             
             Tb =  Tb.*xHI.*Neut;
             T21 = mean(mean(mean(Tb)));

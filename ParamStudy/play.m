@@ -59,3 +59,44 @@ p.plotSigScatter(xfield,yfield,figSettings,outputName,caseNums)
 %p.plotBasicSigScatter({'specialParams','maxSlope','z'},{'specialParams','maxSlope','T'},outputPath);
 %p.plotBasicSigScatter({'specialParams','minT21cm','z'},{'specialParams','minT21cm','T'},outputPath);
 %p.plotBasicSigScatter({'specialParams','maxT21cm','z'},{'specialParams','maxT21cm','T'},outputPath);
+
+
+
+zs = [6:60];
+dataMat = NaN([length(zs),128,128,128]);
+for zind = 1:length(zs)
+	fileName = ['/scratch300/matanlotem/Data/PS_63/TK_',num2str(zs(zind)),'_9_0.158_1_76.5_0.1_2_6060_0_0_2_1_2.mat'];
+    if exist(fileName) == 2
+    	dataMat(zind,:,:,:) = importdata(fileName);
+    end
+    if mod(zind,10) == 0
+    	disp(['    ',num2str(zind),' / ',num2str(length(zs))]);
+    end
+end
+dataMat = squeeze(dataMat);
+
+
+
+
+SIM21PwSp.getPwSp(p.paramCases(caseNum).c);
+
+
+caseNum = 1;
+%% check powerspectrum limit
+MName = 'PowerMat';
+runCase = p.paramCases(caseNum).c;
+MK = SIM21Utils.importMatrix('K');
+kInds = find(MK<0.335 & MK>0.1);
+PowerMat = importdata([runCase.outputPath,MName,runCase.ID,'.mat']);
+zInd = find(SIM21Analysis.PwSpZ==8.4);
+MK(kInds).^3 .* PowerMat(zInd,kInds) / (2*pi^2)
+min(MK(kInds).^3 .* PowerMat(zInd,kInds) / (2*pi^2) < 501.76)
+
+
+
+SIM21Analysis.getAvgFcoll(p.paramCases(caseNum).c,p.specialParams(caseNum).fmaxT21cm.z)
+
+
+
+
+

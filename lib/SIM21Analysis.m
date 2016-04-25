@@ -198,7 +198,7 @@ classdef SIM21Analysis
         end
 
 
-        function figSettings = initFigSettings(title,add2Title,xLabel,yLabel)
+        function figSettings = initFigSettings(title,add2Title,xLabel,yLabel,legend)
             if ~isempty(add2Title)
                 add2Title = [' - ',add2Title];
             end
@@ -206,7 +206,11 @@ classdef SIM21Analysis
             figSettings.xLabel = xLabel;
             figSettings.yLabel = yLabel;
             figSettings.plots = {};
-            figSettings.legend = true;
+            if exist('legend','var')
+                figSettings.legend = legend;
+            else
+                figSettings.legend = true;
+            end
         end
         
 
@@ -251,8 +255,8 @@ classdef SIM21Analysis
             pathname_Data1 = c.tmpDataPath;
             pathname_DataBackgrounds = SIM21Utils.paths.dataBackgrounds;
             ID = c.ID;
-            pathname_Data1 = c.tmpDataPath;
-            delta_cube=importdata(strcat(pathname_DataBackgrounds,'my',num2str(c.ncube),'_d.dat'));
+            
+            delta_cube=importdata([pathname_DataBackgrounds,'my',num2str(c.ncube),'_d.dat']);
 
             TSMean = [];
             for z = TS.z
@@ -307,6 +311,11 @@ classdef SIM21Analysis
                         h.MarkerEdgeColor = figPlot.color;
                     else
                         h.MarkerEdgeColor = h.CData;
+                    end
+                    if isfield(figPlot,'filled')
+                        if figPlot.filled
+                            h.MarkerFaceColor = h.MarkerEdgeColor;
+                        end
                     end
                     if isfield(figPlot,'shape')
                         h.Marker = figPlot.shape;
@@ -416,7 +425,7 @@ classdef SIM21Analysis
         end
 
 
-        function pscatter = plotScatter(XYData,name,color,shape)
+        function pscatter = plotScatter(XYData,name,color,shape,filled)
             % create line object
             pscatter.type = 'scatter';
             pscatter.x = XYData(1,:);
@@ -427,6 +436,9 @@ classdef SIM21Analysis
             end
             if exist('shape','var')
                 pscatter.shape = shape;
+            end
+            if exist('filled','var')
+                pscatter.filled = filled;
             end
         end
 
@@ -452,10 +464,13 @@ classdef SIM21Analysis
             maxT21cmInd = find(T21cmData(2,:)==max(T21cmData(2,1:T21cmZMaxInd)));
             specialParams.minT21cm.z = T21cmData(1,minT21cmInd);
             specialParams.minT21cm.T = T21cmData(2,minT21cmInd);
+            specialParams.minT21cm.fcoll = SIM21Analysis.getAvgFcoll(c,specialParams.minT21cm.z);
             specialParams.maxT21cm.z = T21cmData(1,maxT21cmInd);
             specialParams.maxT21cm.T = T21cmData(2,maxT21cmInd);
+            specialParams.maxT21cm.fcoll = SIM21Analysis.getAvgFcoll(c,specialParams.maxT21cm.z);
             specialParams.fmaxT21cm.z = T21cmData(1,T21cmZMaxInd);
             specialParams.fmaxT21cm.T = T21cmData(2,T21cmZMaxInd);
+            specialParams.fmaxT21cm.fcoll = SIM21Analysis.getAvgFcoll(c,specialParams.fmaxT21cm.z);
             
             % MIN / MAX Slope
             %slope = diff(T21cmData(2,1:T21cmZMaxInd)) ./ diff(T21cmData(1,1:T21cmZMaxInd));
@@ -547,28 +562,134 @@ classdef SIM21Analysis
                           'Heating Transition\n\tz = ',num2str(specialParams.THT.z),'\n\tT = ',num2str(specialParams.THT.T),'\n'];
             niceOutput = sprintf(niceOutput);
         end
+
+
+        function fcollTOT = getAvgFcoll(runCase,z)
+            pathname_DataBackgrounds = SIM21Utils.paths.dataBackgrounds;
+            vbc_cube = importdata([pathname_DataBackgrounds,'my',num2str(runCase.ncube),'_v.dat']);
+            delta_cube = importdata([pathname_DataBackgrounds,'my',num2str(runCase.ncube),'_d.dat']); %CHANGE
+
+            vbc = rms(rms(rms(vbc_cube))); %CHANGE
+            g = LWgetDz(z)/LWgetDz(40); %CHANGE
+            delta = rms(rms(rms(g*delta_cube))); %CHANGE
+
+            %vbc = mean(mean(mean(vbc_cube)));
+
+            if runCase.feedback
+                LWm = mean(mean(mean(runCase.getData('JLW',z,1))));
+            else
+                LWm = 0;
+            end
+
+            flag = 1;
+
+            %LWgetMcubeVc
+            h = 0.6704;
+            Oc = 0.12038/h^2;
+            Ob = 0.022032/h^2;
+            Om = Ob+Oc;
+            Omz = Om*(1+z).^3./(Om.*(1+z).^3+1-Om);
+            d = Omz-1;
+            Dc = 18*pi^2+82*d-39*d^2;
+
+            a=4.015;
+            zrec = 1020;
+            Vc = (runCase.vc^2 + (a*flag*vbc*(1+z)/(1+zrec)*0.000097*3e5).^2).^0.5;
+
+            Mc = 10^8*(Vc/23.4).^3*((1+z)/10).^(-3/2)*(Om*Dc/Omz/18/pi^2).^-0.5/h;
+            M = Mc.*(1+ 6.96*(LWm*4*pi).^0.47);
+
+            M = min(M,1e11*ones(size(M)));
+            M = max(M,10^5*ones(size(M)));
+
+            roundZ = SIM21Utils.roundDataTypeZ('xHI',z);
+            if runCase.fsfunc == 1
+                gridA=0;gridM=0;    
+                gridAMQ=0;gridMMQ=0;
+                load([pathname_DataBackgrounds,'gridM10_',num2str(roundZ),'.mat']);
+                load([pathname_DataBackgrounds,'gridA10_',num2str(roundZ),'.mat']);  
+            elseif runCase.fsfunc == 2
+                gridA=0;gridM=0;
+                gridAMQ=0;gridMMQ=0;
+                load([pathname_DataBackgrounds,'gridM10Sharp_',num2str(roundZ),'.mat']);
+                load([pathname_DataBackgrounds,'gridA10Sharp_',num2str(roundZ),'.mat']); 
+            end
+
+            delmax = 1.0;
+            Nres = 100;
+            if (roundZ>15)
+                deltas = linspace(-delmax,delmax,Nres);
+            else
+                deltas = linspace(-delmax,2*delmax,3*Nres/2);
+            end
+            %delta=deltas(51);
+            vbc_vals = linspace(0,3.8,Nres);
+            NresM = 45;
+            if (roundZ<66)
+                Mass = logspace(log10(1e5),log10(1e11),NresM);
+            else
+                Mass = logspace(log10(1e5),log10(1e8),NresM);
+            end
+
+
+            %%%%%%%%%%%%%
+            zz = SIM21Utils.getDataType('xHI').z;
+            zz = zz(zz<=50);
+            zIND=find(zz<z,1,'last');
+            xHImat(zIND:length(zz)) = mean(mean(mean(runCase.getData('xHI',zz(zIND:end)),2),3),4);
+
+            ZxHI = interp1(zz(zIND:end),xHImat(zIND:end),z);
+            if ZxHI < 0.99 % only if ionization has started
+                q = find(xHImat>(1-(1-ZxHI)/2));
+                ZhalfxHI = interp1(xHImat(q-1:q),zz(q-1:q),1-(1-ZxHI)/2);
+
+                M0 = 2.8e9; 
+                a = 0.17;
+                b = -2.1;
+                c = 2;
+                d = 2.5;
+                J21 = 0.5;  
+
+                Mcrit = M0.*(J21.^a).*(((1+z)./10).^b).*((1-((1 + z)./(1 + ZhalfxHI)).^c).^d);
+                Mmin=max(M,Mcrit);
+            else
+                Mmin = M;
+            end
+
+            %%%%%%%%%%%%%%%
+            fgasA = exp(interp3(vbc_vals,deltas,Mass,log(gridA),(flag+1e-10)*vbc,delta,M,'linear'));
+            fgasM = exp(interp3(vbc_vals,deltas,Mass,log(gridM),(flag+1e-10)*vbc,delta,M,'linear'));
+            fcoll=fgasM+fgasA;
+            fcollTOT = fcoll;
+
+            %%fgasA = exp(interp3(vbc_vals,deltas,Mass,log(gridA),(flag+1e-10)*vbc,delta,Mmin,'linear'));
+            %%fgasM = exp(interp3(vbc_vals,deltas,Mass,log(gridM),(flag+1e-10)*vbc,delta,Mmin,'linear'));
+            %%fcollTOT=(1-ZxHI)*(fgasM+fgasA)+ZxHI*fcoll;
+        end
         
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%
         %%% POWER SPECTRUM STUFF %%%
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%    
-        function plotPowerSpectrums(outputPath,runID)
-            SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.1,['Atomic, Old spectrum - K=',num2str(0.1)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
-            SIM21Analysis.plotPowerSpectrumByK(outputPath,runID,0.5,['Atomic, Old spectrum - K=',num2str(0.5)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
-            SIM21Analysis.plotPowerSpectrumByZ(outputPath,runID,'Atomic, Old spectrum','k [Mpc^{-1}]','k^3P(k)/2\pi^2 [mK^2]');
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+
+        function plotPowerSpectrums(runCase)
+            SIM21Analysis.plotPowerSpectrumByK(runCase,0.05,['Atomic, Old spectrum - K=',num2str(0.05)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
+            SIM21Analysis.plotPowerSpectrumByK(runCase,0.1,['Atomic, Old spectrum - K=',num2str(0.1)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
+            SIM21Analysis.plotPowerSpectrumByK(runCase,0.5,['Atomic, Old spectrum - K=',num2str(0.5)],'1+z','k^3P(k)/2\pi^2 [mK^2]');
+            SIM21Analysis.plotPowerSpectrumByZ(runCase,'Atomic, Old spectrum','k [Mpc^{-1}]','k^3P(k)/2\pi^2 [mK^2]');
         end
         
         
-        function plotPowerSpectrumByZ(outputPath,runID,figTitle,figXLabel,figYLabel)
+        function plotPowerSpectrumByZ(runCase,figTitle,figXLabel,figYLabel)
             zs = [8,8.7,10.37,17,11.53,22,30];
             lineColors = {'r','g','b','m','c','k','k'};
             lineStyles = {'-','-','-','-','-','-','--'};
             lineWidths = ones(1,7);
-            SIM21Analysis.plotPowerSpectrumByZs(outputPath,runID,zs,lineColors,lineStyles,lineWidths,figTitle,figXLabel,figYLabel);
+            SIM21Analysis.plotPowerSpectrumByZs(runCase,zs,lineColors,lineStyles,lineWidths,figTitle,figXLabel,figYLabel);
         end
         
         
-        function plotPowerSpectrumByK(outputPath,runID,k,figTitle,figXLabel,figYLabel)
+        function plotPowerSpectrumByK(runCase,k,figTitle,figXLabel,figYLabel)
             SIM21Analysis.message('plotting power spectrum');
             
             % Get K data
@@ -581,7 +702,7 @@ classdef SIM21Analysis
             zPS = min(SIM21Analysis.PwSpZ):interpStep:max(SIM21Analysis.PwSpZ); 
             
             % Plotting Paramters
-            figName = [outputPath,'PwSpK_',num2str(k),runID,'.png'];
+            figName = [runCase.outputPath,'PwSpK',num2str(k),runCase.ID,'.png'];
             delx = 0.04;
             x2=min(SIM21Analysis.PwSpZ):delx:max(SIM21Analysis.PwSpZ); 
             Ind = floor(1+delx*(0:length(x2)-1)/0.01);
@@ -590,7 +711,7 @@ classdef SIM21Analysis
             
             function doPowerSpectrum(MName,Msign,lineColor,lineStyle,lineWidth)
                 % Import -> Calc for specific K -> Interpolate -> Plot
-                PowerMat = importdata([outputPath,MName,runID,'.mat']);
+                PowerMat = importdata([runCase.outputPath,MName,runCase.ID,'.mat']);
                 PS = (MK(KInd).^3.*squeeze(real(PowerMat(:,KInd)))/(2*pi^2));
                 PS1 = interp1(SIM21Analysis.PwSpZ,Msign*PS',zPS,'spline');
                 loglog(1+x2,PS1(Ind).*(x2>6.9),'Color',lineColor,'LineStyle',lineStyle,'LineWidth',lineWidth);
@@ -598,10 +719,10 @@ classdef SIM21Analysis
             end
             
             doPowerSpectrum('PowerMat',1,'r','-',1);
-            doPowerSpectrum('PowerMat_iso',1,[0,127/255,0],'-',1);
-            doPowerSpectrum('PowerMat_X',1,'b','-',1);
-            doPowerSpectrum('PowerMat_X',-1,'b',':',2);
-            doPowerSpectrum('PowerMat_del',1,'k','-',1);
+            %%doPowerSpectrum('PowerMat_iso',1,[0,127/255,0],'-',1);
+            %%doPowerSpectrum('PowerMat_X',1,'b','-',1);
+            %%doPowerSpectrum('PowerMat_X',-1,'b',':',2);
+            %%doPowerSpectrum('PowerMat_del',1,'k','-',1);
             
             % Style Plot
             xlim([7,40]);
@@ -618,12 +739,12 @@ classdef SIM21Analysis
         end
         
         
-        function plotPowerSpectrumByZs(outputPath,runID,zs,lineColors,lineStyles,lineWidths,figTitle,figXLabel,figYLabel)
+        function plotPowerSpectrumByZs(runCase,zs,lineColors,lineStyles,lineWidths,figTitle,figXLabel,figYLabel)
             
             MK = SIM21Utils.importMatrix('K');
-            PowerMat = importdata([outputPath,'PowerMat',runID,'.mat']);
+            PowerMat = importdata([runCase.outputPath,'PowerMat',runCase.ID,'.mat']);
             
-            figName = [outputPath,'PwSpZ',runID,'.png'];
+            figName = [runCase.outputPath,'PwSpZ',runCase.ID,'.png'];
             f=figure();
             
             function doPowerSpectrum(z,lineColor,lineStyle,lineWidth)

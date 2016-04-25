@@ -85,11 +85,19 @@ classdef SIM21Case < matlab.mixin.Copyable
         end
 
 
-        function dataMat = getData(obj,dataType,zs)
+        function dataMat = getData(obj,dataType,zs,rnd)
             dataType = SIM21Utils.getDataType(dataType);
             if ~ exist('zs','var')
                 zs = dataType.z;
+            else
+                if ~ exist('rnd','var')
+                    rnd = 0;
+                end
+                if rnd
+                    zs = SIM21Utils.roundDataTypeZ(dataType,zs);
+                end
             end
+
 
             % Create empty matrix
             dataMat = NaN([length(zs),SIM21Utils.cubeSize]);
